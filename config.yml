@@ -1,0 +1,11 @@
+storeType: OFFHEAP
+threadCount: 33
+entryCount: 10000000
+offHeapSize: "1G"
+maxOnHeapCount: 5000
+batchCount: 50000
+maxValueSize: 800
+minValueSize: 200
+hotSetPercentage: 99
+rounds: 40
+updatePercentage: 10
