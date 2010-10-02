@@ -15,9 +15,7 @@ import net.sf.ehcache.config.DiskStoreConfiguration;
 import org.ho.yaml.Yaml;
 
 /**
- * This is a small sample app that demonstrates the bulk loading characteristics of ehcache.
- * 
- * Usage: EhcachePounder [OFFHEAP | ONHEAP | DISK] <threadCount> <entryCount> [size of offheap]
+ * This is a small sample app that exercises the enterprise ehcache tiered store characteristics of ehcache.
  * 
  * 
  * 
