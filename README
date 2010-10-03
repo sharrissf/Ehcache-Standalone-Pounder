@@ -1,0 +1,35 @@
+This is a small  app that exercises the characteristics of the enterprise ehcache tiered store .
+
+Run it using this command:
+
+java -verbose:gc  -Xms400m -Xmx400m  -XX:+UseCompressedOops -XX:MaxDirectMemorySize=1200m -cp ".:./jyaml-1.3.jar:./ehcache-pounder-0.0.1-SNAPSHOT.jar:./ehcache-core-ee-2.3.0-SNAPSHOT.jar:slf4j-api-1.5.11.jar:slf4j-jdk14-1.5.11.jar" org.sharrissf.ehcache.tools.EhcachePounder
+  
+  Configuration is done through the config.yml file. All settings are mandatory
+  
+  storeType: OFFHEAP|DISK|ONHEAP
+  threadCount: number of execution threads
+  entryCount: Total number of entries to load in the load phase and the number of operations to perform in the read/update phase
+  offHeapSize: Amount of ram to dedicate to offheap (NOTE: you also have to have at least that number in the -XX:MaxDirectMemorySize=4g)
+  maxOnHeapCount: Count of onHeap cache tier entries. This only helps if you have a hot set a slowly moving hotset that fits in memory. If you don't set this thing to 1024
+  batchCount: How often you print the current status and change the entry size for each thread
+  maxValueSize: Max size in bytes of the value portion of the entry (a random number is picked bellow this)
+  minValueSize: min size in bytes of the value portion of the entry (a random number is picked above this)
+  hotSetPercentage: Percentage of time you hit an entry from the onHeap portion of the cache
+  rounds: Number of times your execute entryCount operations matching the above config elements
+  updatePercentage: Number of times out of 100 that you update an entry instead of reading
+
+
+For example
+-----
+
+storeType: OFFHEAP
+threadCount: 33
+entryCount: 1000000
+offHeapSize: "1G"
+maxOnHeapCount: 5000
+batchCount: 50000
+maxValueSize: 800
+minValueSize: 200
+hotSetPercentage: 99
+rounds: 40
+updatePercentage: 10
