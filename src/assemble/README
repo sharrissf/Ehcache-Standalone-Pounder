@@ -38,3 +38,5 @@ minValueSize: 200
 hotSetPercentage: 99
 rounds: 40
 updatePercentage: 10
+
+!!IMPORTANT!! the offHeapSize in the config file + the heap size on the java commandline + the memory needed by the OS MUST be less than the physical memory on the machine
