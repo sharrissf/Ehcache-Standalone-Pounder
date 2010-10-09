@@ -22,6 +22,7 @@ An example script for running is included:
   hotSetPercentage: Percentage of time you hit an entry from the onHeap portion of the cache
   rounds: Number of times your execute entryCount operations matching the above config elements
   updatePercentage: Number of times out of 100 that you update an entry instead of reading
+  diskStorePath: Location to store the files fore the disk store
 
 
 For example
@@ -38,5 +39,6 @@ minValueSize: 200
 hotSetPercentage: 99
 rounds: 40
 updatePercentage: 10
+diskStorePath: /export1/dev
 
 !!IMPORTANT!! the offHeapSize in the config file + the heap size on the java commandline + the memory needed by the OS MUST be less than the physical memory on the machine

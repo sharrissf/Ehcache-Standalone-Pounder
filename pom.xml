@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.sharrissf</groupId>
 	<artifactId>ehcache-pounder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>Ehcache Pounder</name>
 	<description>Simple tool for pounding and measuring the performance of
 		ehcache and it's tiered stores</description>

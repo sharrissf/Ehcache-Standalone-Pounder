@@ -52,6 +52,8 @@ import org.ho.yaml.Yaml;
  * updatePercentage: Number of times out of 100 that you update an entry instead
  * of reading
  * 
+ * diskStorePath: Where to put the disk store if one is in use
+ * 
  * @author steve
  * 
  */
@@ -67,6 +69,7 @@ public class EhcachePounder {
 	private final int hotSetPercentage;
 	private final int rounds;
 	private final int updatePercentage;
+	private final String diskStorePath;
 	private static final Random random = new Random();
 
 	private volatile boolean isWarmup = true;
@@ -106,13 +109,15 @@ public class EhcachePounder {
 	 *            - number of rounds of entryCount operations
 	 * @param updatePercentage
 	 *            - percentage of time to do an update instead of a read
+	 * @param diskStorePath
+	 *            - location of disk store file
 	 * @throws InterruptedException
 	 */
 	public EhcachePounder(StoreType storeType, int threadCount,
 			long entryCount, String offHeapSize, int maxOnHeapCount,
 			int batchCount, int maxValueSize, int minValueSize,
-			int hotSetPercentage, int rounds, int updatePercentage)
-			throws InterruptedException {
+			int hotSetPercentage, int rounds, int updatePercentage,
+			String diskStorePath) throws InterruptedException {
 		this.entryCount = entryCount;
 		this.threadCount = threadCount;
 		this.offHeapSize = offHeapSize;
@@ -123,6 +128,7 @@ public class EhcachePounder {
 		this.hotSetPercentage = hotSetPercentage;
 		this.rounds = rounds;
 		this.updatePercentage = updatePercentage;
+		this.diskStorePath = diskStorePath;
 		initializeCache(storeType);
 	}
 
@@ -322,7 +328,7 @@ public class EhcachePounder {
 			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true);
 		} else if (storeType.equals(StoreType.DISK)) {
 			cacheManagerConfig.addDiskStore(new DiskStoreConfiguration()
-					.path("/export1/dev/"));
+					.path(diskStorePath));
 			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true)
 					.maxElementsInMemory(maxOnHeapCount)
 					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize)
@@ -356,9 +362,10 @@ public class EhcachePounder {
 		int hotSetPercentage = (Integer) config.get("hotSetPercentage");
 		int rounds = (Integer) config.get("rounds");
 		int updatePercentage = (Integer) config.get("updatePercentage");
-
+		String diskStorePath = (String) config.get("diskStorePath");
 		new EhcachePounder(storeType, threadCount, entryCount, offHeapSize,
 				maxOnHeapCount, batchCount, maxValueSize, minValueSize,
-				hotSetPercentage, rounds, updatePercentage).start();
+				hotSetPercentage, rounds, updatePercentage, diskStorePath)
+				.start();
 	}
 }
