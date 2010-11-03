@@ -142,12 +142,12 @@ public class EhcachePounder {
 	public void start() throws InterruptedException {
 
 		System.out
-				.println("Starting with threadCount: " + threadCount
+		  .println(System.currentTimeMillis() + " Starting with threadCount: " + threadCount
 						+ " entryCount: " + entryCount + " Max Length: "
 						+ maxValueSize);
 		for (int i = 0; i < rounds; i++) {
 			performCacheOperationsInThreads(isWarmup);
-			System.out.println("ROUND " + i + " size: " + cache.getSize());
+			System.out.println(System.currentTimeMillis() + " ROUND " + i + " size: " + cache.getSize());
 			if (isWarmup) {
 				this.maxBatchTimeMillis.set(0);
 			}
@@ -181,7 +181,7 @@ public class EhcachePounder {
 			threads[i].join();
 		}
 		long totalTime = (System.currentTimeMillis() - t1);
-		System.out.println("Took: " + totalTime + " final size was "
+		System.out.println(System.currentTimeMillis() + " Took: " + totalTime + " final size was "
 				+ cache.getSize() + " TPS: "
 				+ (int) (entryCount / (totalTime / 1000d)));
 	}
@@ -207,7 +207,7 @@ public class EhcachePounder {
 				}
 				currentSize = cache.getSize();
 
-				System.out.println(" size:" + (currentSize) + " time: "
+				System.out.println(System.currentTimeMillis() + " size:" + (currentSize) + " time: "
 						+ batchTimeMillis + " Max batch time millis: "
 						+ (warmup ? "warmup" : ("" + maxBatchTimeMillis))
 						+ " value size:" + value.length + " READ: " + readCount
@@ -294,14 +294,14 @@ public class EhcachePounder {
 		for (byte i = 0; i < 5; i++) {
 			if (i != bytes[i]) {
 				System.out
-						.println("First Expected: " + i + " got: " + bytes[i]);
+				  .println(System.currentTimeMillis() + (" First Expected: " + i + " got: " + bytes[i]);
 				return false;
 			}
 		}
 
 		for (byte i = 1; i < 5; i++) {
 			if (i != bytes[bytes.length - i]) {
-				System.out.println("Last Expected: " + i + " got: "
+			  System.out.println(System.currentTimeMillis() + " Last Expected: " + i + " got: "
 						+ bytes[bytes.length - i]);
 				return false;
 			}
@@ -346,9 +346,9 @@ public class EhcachePounder {
 		Map<String, Object> config = (Map<String, Object>) Yaml
 				.load(new FileReader("config.yml"));
 
-		System.out.println("Printing Config Values:");
+		System.out.println(System.currentTimeMillis() + " Printing Config Values:");
 		for (String k : config.keySet()) {
-			System.out.println(k + ": " + config.get(k));
+		  System.out.println(System.currentTimeMillis() + " " + k + ": " + config.get(k));
 		}
 		StoreType storeType = StoreType.valueOf((String) config
 				.get("storeType"));

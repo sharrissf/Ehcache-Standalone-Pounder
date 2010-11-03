@@ -7,7 +7,7 @@ use strict;
 
 my ($TEMPLATE_NAME, $CACHE_SIZE_IN_GB, $OFFHEAP) = @ARGV;
 
-my $VERSION = "0.0.2-SNAPSHOT";
+my $VERSION = "0.0.3-SNAPSHOT";
 
 my $SRC_DIR ="src";
 
@@ -44,7 +44,7 @@ my $classpath = join ":$LIB_DIR", @libs;
 $classpath = $LIB_DIR . $classpath;
 
 my $RUN_POUNDER = <<"EOF";
-java -verbose:gc  -Xms${min_heap} -Xmx${max_heap} -XX:+UseCompressedOops -XX:MaxDirectMemorySize=${max_direct_memory_size}G -cp $classpath org.sharrissf.ehcache.tools.EhcachePounder
+java -verbose:gc  -Dorg.terracotta.license.path=${LIB_DIR}terracotta-license.key -Xms${min_heap} -Xmx${max_heap} -XX:+UseCompressedOops -XX:MaxDirectMemorySize=${max_direct_memory_size}G -cp $classpath org.sharrissf.ehcache.tools.EhcachePounder
 EOF
 
 my $CONFIG_YML = <<"EOF";
@@ -53,7 +53,7 @@ threadCount: 33
 entryCount: $entry_count
 offHeapSize: "${CACHE_SIZE_IN_GB}G"
 maxOnHeapCount: ${max_on_heap_count}
-batchCount: 50000
+batchCount: 5000
 maxValueSize: $max_value_size_in_bytes
 minValueSize: $min_value_size_in_bytes
 hotSetPercentage: 99
