@@ -207,12 +207,13 @@ public class EhcachePounder {
 				}
 				currentSize = cache.getSize();
 
-				System.out.println(System.currentTimeMillis() + " size:" + (currentSize) + " time: "
-						+ batchTimeMillis + " Max batch time millis: "
-						+ (warmup ? "warmup" : ("" + maxBatchTimeMillis))
-						+ " value size:" + value.length + " READ: " + readCount
-						+ " WRITE: " + writeCount + " Hotset: "
-						+ hotSetPercentage);
+				System.out.println(System.currentTimeMillis() + " size:" + (currentSize) 
+						   + " batch time: "
+						   + batchTimeMillis + " Max batch time millis: "
+						   + (warmup ? "warmup" : ("" + maxBatchTimeMillis))
+						   + " value size:" + value.length + " READ: " + readCount
+						   + " WRITE: " + writeCount + " Hotset: "
+						   + hotSetPercentage);
 				value = buildValue();
 				t = System.currentTimeMillis();
 				readCount = 0;
@@ -294,7 +295,7 @@ public class EhcachePounder {
 		for (byte i = 0; i < 5; i++) {
 			if (i != bytes[i]) {
 				System.out
-				  .println(System.currentTimeMillis() + (" First Expected: " + i + " got: " + bytes[i]);
+				  .println(System.currentTimeMillis() + " First Expected: " + i + " got: " + bytes[i]);
 				return false;
 			}
 		}

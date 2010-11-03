@@ -3,7 +3,7 @@ threadCount: 33
 entryCount: 20000000
 offHeapSize: "20G"
 maxOnHeapCount: 5000
-batchCount: 5000
+batchCount: 50000
 maxValueSize: 1000
 minValueSize: 200
 hotSetPercentage: 99
