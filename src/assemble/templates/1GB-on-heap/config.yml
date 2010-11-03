@@ -1,0 +1,12 @@
+storeType: ONHEAP
+threadCount: 33
+entryCount: 1000000
+offHeapSize: "1G"
+maxOnHeapCount: 1000000
+batchCount: 50000
+maxValueSize: 1000
+minValueSize: 200
+hotSetPercentage: 99
+rounds: 40
+updatePercentage: 10
+diskStorePath: /tmp

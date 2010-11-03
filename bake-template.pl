@@ -5,18 +5,19 @@
 
 use strict;
 
+my ($TEMPLATE_NAME, $CACHE_SIZE_IN_GB, $OFFHEAP) = @ARGV;
+
 my $VERSION = "0.0.2-SNAPSHOT";
 
 my $SRC_DIR ="src";
 
 my $TEMPLATE_BASE = "$SRC_DIR/assemble/templates";
-my $TEMPLATE_NAME = "20GB-BigMemory";
+#my $TEMPLATE_NAME = "20GB-BigMemory";
 my $TEMPLATE_DIR = $TEMPLATE_BASE . "/" . $TEMPLATE_NAME;
-my $CACHE_SIZE_IN_GB = 20;
-my $OFFHEAP = 1;
+#my $CACHE_SIZE_IN_GB = 20;
+#my $OFFHEAP = 1;
 my $STORE_TYPE = $OFFHEAP ? "OFFHEAP" : "ONHEAP";
 my $LIB_DIR = "../../";
-
 
 my $min_heap = $OFFHEAP ? "200m" : ($CACHE_SIZE_IN_GB + 1) . "g";
 my $max_heap = $min_heap;
@@ -26,6 +27,7 @@ my $max_value_size_in_bytes = 1000;
 my $min_value_size_in_bytes = 200;
 
 my $entry_count = $CACHE_SIZE_IN_GB * 1000000000 / $max_value_size_in_bytes;
+my $max_on_heap_count = $OFFHEAP ? 5000 : $entry_count;
 
 my $disk_store_path = "/tmp";
 
@@ -50,7 +52,7 @@ storeType: ${STORE_TYPE}
 threadCount: 33
 entryCount: $entry_count
 offHeapSize: "${CACHE_SIZE_IN_GB}G"
-maxOnHeapCount: 5000
+maxOnHeapCount: ${max_on_heap_count}
 batchCount: 50000
 maxValueSize: $max_value_size_in_bytes
 minValueSize: $min_value_size_in_bytes
