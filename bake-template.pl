@@ -73,6 +73,6 @@ open FILE, ">$TEMPLATE_DIR/run-pounder.sh" or die "Can't open $TEMPLATE_DIR/run-
 print FILE $RUN_POUNDER;
 close FILE;
 
-open FILE, ">$TEMPLATE_DIR/config.yml" or die "CAn't open $TEMPLATE_DIR/config.yml for writing";
+open FILE, ">$TEMPLATE_DIR/config.yml" or die "Can't open $TEMPLATE_DIR/config.yml for writing";
 print FILE $CONFIG_YML;
 close FILE;
