@@ -14,10 +14,7 @@ my $POUNDER_GC_LOGFILE = "/tmp/pounder.gc.log";
 my $SRC_DIR ="src";
 
 my $TEMPLATE_BASE = "$SRC_DIR/assemble/templates";
-#my $TEMPLATE_NAME = "20GB-BigMemory";
 my $TEMPLATE_DIR = $TEMPLATE_BASE . "/" . $TEMPLATE_NAME;
-#my $CACHE_SIZE_IN_GB = 20;
-#my $OFFHEAP = 1;
 my $STORE_TYPE = $OFFHEAP ? "OFFHEAP" : "ONHEAP";
 my $LIB_DIR = "../../";
 
@@ -30,6 +27,8 @@ my $min_value_size_in_bytes = 200;
 
 my $entry_count = $CACHE_SIZE_IN_GB * 1000000000 / $max_value_size_in_bytes;
 my $max_on_heap_count = $OFFHEAP ? 5000 : $entry_count;
+
+my $rounds = ($CACHE_SIZE_IN_GB < 10 ? 40 : 3);
 
 my $disk_store_path = "/tmp";
 
@@ -59,7 +58,7 @@ batchCount: 50000
 maxValueSize: $max_value_size_in_bytes
 minValueSize: $min_value_size_in_bytes
 hotSetPercentage: 99
-rounds: 3
+rounds: ${rounds}
 updatePercentage: 10
 diskStorePath: ${disk_store_path}
 EOF
