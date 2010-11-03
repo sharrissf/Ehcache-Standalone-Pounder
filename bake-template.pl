@@ -59,7 +59,7 @@ batchCount: 50000
 maxValueSize: $max_value_size_in_bytes
 minValueSize: $min_value_size_in_bytes
 hotSetPercentage: 99
-rounds: 40
+rounds: 3
 updatePercentage: 10
 diskStorePath: ${disk_store_path}
 EOF

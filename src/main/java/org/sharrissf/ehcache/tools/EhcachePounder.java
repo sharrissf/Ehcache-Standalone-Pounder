@@ -338,8 +338,9 @@ public class EhcachePounder {
 		cacheManagerConfig.addCache(cacheConfig);
 
 		this.cacheManager = new CacheManager(cacheManagerConfig);
-
+		System.out.println("Printing Ehchache configuration:");
 		this.cache = this.cacheManager.getCache("testCache");
+		System.out.println(cacheManager.getActiveConfigurationText("testCache"));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -347,10 +348,11 @@ public class EhcachePounder {
 		Map<String, Object> config = (Map<String, Object>) Yaml
 				.load(new FileReader("config.yml"));
 
-		System.out.println(System.currentTimeMillis() + " Printing Config Values:");
+		System.out.println(" Printing Pounder YAML config values:");
 		for (String k : config.keySet()) {
-		  System.out.println(System.currentTimeMillis() + " " + k + ": " + config.get(k));
+		  System.out.println(k + ": " + config.get(k));
 		}
+		
 		StoreType storeType = StoreType.valueOf((String) config
 				.get("storeType"));
 		Integer entryCount = (Integer) config.get("entryCount");
