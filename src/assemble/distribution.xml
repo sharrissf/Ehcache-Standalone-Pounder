@@ -19,9 +19,15 @@
 				<include>*.yml</include>
 				<include>*.sh</include>
 				<include>README</include>
+				<include>templates</include>
 			</includes>
 			<filtered>true</filtered>
 			<outputDirectory>/</outputDirectory>
+		</fileSet>
+		<fileSet>
+			<directory>${basedir}/src/assemble/templates</directory>
+			<filtered>true</filtered>
+			<outputDirectory>/templates</outputDirectory>
 		</fileSet>
 	</fileSets>
 	<dependencySets>

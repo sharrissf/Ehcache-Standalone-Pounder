@@ -1,12 +1,36 @@
-This is a small  app that exercises the characteristics of the enterprise ehcache tiered store .
+This is a small  app that exercises the characteristics of the enterprise
+ehcache tiered store, including BigMemory. 
 
-Run it using this command:
-NOTE: Make sure your get a copy of ehcache that supports BigMemory from www.terracotta.org in order to use this pounder
-NOTE: Make sure you get a license key and place it in the directory your running from
 
-An example script for running is included:
+1. GET ENTERPRISE EHCACHE AND LICENSE KEY
 
-	run-pounder.sh
+You must use a version of Enteprise Ehcache that supports BigMemory in
+to use this sample.  You may download an evaluation copy of Enterprise
+Ehcache and the license key from terracotta.org:
+
+    http://terracotta.org/bigmemory
+
+2. PREPARE ENVIRONMENT
+
+BigMemory is designed to take advantage of large amounts of RAM without 
+
+3. INSTALL LICENSE KEY
+
+Place your license key file in the same directory from which you run the sample.
+
+4. CONFIGURE
+
+
+
+4. RUN THE SAMPLE
+
+Run the sample using the following script:
+
+    run-pounder.sh
+
+You may need to make the script executable:
+
+    chmod u+x run-pounder.sh  
 
   
   Configuration is done through the config.yml file. All settings are mandatory
