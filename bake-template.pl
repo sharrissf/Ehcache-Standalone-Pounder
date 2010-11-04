@@ -28,7 +28,7 @@ my $min_value_size_in_bytes = 200;
 my $entry_count = $CACHE_SIZE_IN_GB * 1000000000 / $max_value_size_in_bytes;
 my $max_on_heap_count = $OFFHEAP ? 5000 : $entry_count;
 
-my $rounds = ($CACHE_SIZE_IN_GB < 10 ? 40 : 3);
+my $rounds = ($CACHE_SIZE_IN_GB < 10 ? 40 : 4);
 
 my $disk_store_path = "/tmp";
 
