@@ -10,12 +10,15 @@ Ehcache and the license key from terracotta.org:
     http://terracotta.org/dl/dowload-bigmemory
 
 2. RUN THE TUTORIAL
-  
 
-3. TESTING DIFFERENT CONFIGURATIONS
+See the tutorial material on terracotta.org:
+
+    http://terracotta.org/start/bigmemory-tutorial
+
+3. TEST DIFFERENT CONFIGURATIONS
 
 If you want to test configurations other than those pre-defined in the
-templats, you can alter the configuration as set in the config.yml file. All
+templates, you can alter the configuration as set in the config.yml file. All
 settings are mandatory.
 
 IMPORTANT: The offHeapSize in the config file + the heap size on the java
