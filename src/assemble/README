@@ -69,7 +69,7 @@ updatePercentage
   Number of times out of 100 that you update an entry instead of reading.
 
 diskStorePath
-  Location to store the files fore the disk store.
+  Location to store the files for the disk store.
 
 
 EXAMPLE CONFIGURATION
