@@ -1,56 +1,75 @@
-This is a small  app that exercises the characteristics of the enterprise
-ehcache tiered store, including BigMemory. 
+This is a small app that exercises the characteristics of the Enterprise
+Ehcache tiered store, including BigMemory and the disk store.
 
+1. DOWNLOAD ENTERPRISE EHCACHE
 
-1. GET ENTERPRISE EHCACHE AND LICENSE KEY
-
-You must use a version of Enteprise Ehcache that supports BigMemory in
+You must use a version of Enterprise Ehcache that supports BigMemory
 to use this sample.  You may download an evaluation copy of Enterprise
 Ehcache and the license key from terracotta.org:
 
-    http://terracotta.org/bigmemory
+    http://terracotta.org/dl/dowload-bigmemory
 
-2. PREPARE ENVIRONMENT
-
-BigMemory is designed to take advantage of large amounts of RAM without 
-
-3. INSTALL LICENSE KEY
-
-Place your license key file in the same directory from which you run the sample.
-
-4. CONFIGURE
-
-
-
-4. RUN THE SAMPLE
-
-Run the sample using the following script:
-
-    run-pounder.sh
-
-You may need to make the script executable:
-
-    chmod u+x run-pounder.sh  
-
+2. RUN THE TUTORIAL
   
-  Configuration is done through the config.yml file. All settings are mandatory
-  
-  storeType: OFFHEAP|DISK|ONHEAP
-  threadCount: number of execution threads
-  entryCount: Total number of entries to load in the load phase and the number of operations to perform in the read/update phase
-  offHeapSize: Amount of ram to dedicate to offheap (NOTE: you also have to have at least that number in the -XX:MaxDirectMemorySize=4g)
-  maxOnHeapCount: Count of onHeap cache tier entries. This only helps if you have a hot set a slowly moving hotset that fits in memory. If you don't set this thing to 1024
-  batchCount: How often you print the current status and change the entry size for each thread
-  maxValueSize: Max size in bytes of the value portion of the entry (a random number is picked bellow this)
-  minValueSize: min size in bytes of the value portion of the entry (a random number is picked above this)
-  hotSetPercentage: Percentage of time you hit an entry from the onHeap portion of the cache
-  rounds: Number of times your execute entryCount operations matching the above config elements
-  updatePercentage: Number of times out of 100 that you update an entry instead of reading
-  diskStorePath: Location to store the files fore the disk store
+
+3. TESTING DIFFERENT CONFIGURATIONS
+
+If you want to test configurations other than those pre-defined in the
+templats, you can alter the configuration as set in the config.yml file. All
+settings are mandatory.
+
+IMPORTANT: The offHeapSize in the config file + the heap size on the java
+commandline + the memory needed by the OS MUST be less than the physical memory
+on the machine.
+
+NOTE: To alter the heap size, you must edit run-pounder.sh
+
+CONFIGURATION PARAMETERS
+
+storeType
+  OFFHEAP|DISK|ONHEAP
+
+threadCount
+  The number of execution threads.
+
+entryCount
+  The Total number of entries to load in the load phase and the number of
+  operations to perform in the read/update phase.
+
+offHeapSize
+  The amount of ram to dedicate to offheap (NOTE: you also have to have at
+  least that number in the -XX:MaxDirectMemorySize=4g).
+
+maxOnHeapCount
+  The maximum number of cache entries that may be stored on the JVM heap.  If
+  you have a fairly static hot set of entries that fits in a heap size small
+  enough to avoid long garbage collection pauses, set this to the size of that
+  hot set.  If you don't have such a hot set, use 1024 as a default value.
+
+batchCount
+  How often to print the current status and change the entry size for each thread.
+
+maxValueSize
+  Max size in bytes of the value portion of the entry (a random number is picked bellow this).
+
+minValueSize
+  Min size in bytes of the value portion of the entry (a random number is picked above this).
+
+hotSetPercentage
+  Percentage of time you hit an entry from the on-heap portion of the cache
+  (see maxOnHeapCount).
+
+rounds
+  Number of times your execute entryCount operations matching the above config elements.
+
+updatePercentage
+  Number of times out of 100 that you update an entry instead of reading.
+
+diskStorePath
+  Location to store the files fore the disk store.
 
 
-For example
------
+EXAMPLE CONFIGURATION
 
 storeType: OFFHEAP
 threadCount: 33
@@ -64,5 +83,3 @@ hotSetPercentage: 99
 rounds: 40
 updatePercentage: 10
 diskStorePath: /export1/dev
-
-!!IMPORTANT!! the offHeapSize in the config file + the heap size on the java commandline + the memory needed by the OS MUST be less than the physical memory on the machine
