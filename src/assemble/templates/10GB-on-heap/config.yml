@@ -1,7 +1,7 @@
 storeType: ONHEAP
 threadCount: 33
 entryCount: 10000000
-offHeapSize: "10G"
+offHeapSize: "0"
 maxOnHeapCount: 10000000
 batchCount: 50000
 maxValueSize: 1000

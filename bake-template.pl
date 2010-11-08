@@ -8,6 +8,7 @@ use strict;
 my ($TEMPLATE_NAME, $CACHE_SIZE_IN_GB, $OFFHEAP) = @ARGV;
 
 my $VERSION = "0.0.3-SNAPSHOT";
+my $EHCACHE_VERSION = "2.3.0";
 my $POUNDER_LOGFILE = "/tmp/pounder.log";
 my $POUNDER_GC_LOGFILE = "/tmp/pounder.gc.log";
 
@@ -18,9 +19,22 @@ my $TEMPLATE_DIR = $TEMPLATE_BASE . "/" . $TEMPLATE_NAME;
 my $STORE_TYPE = $OFFHEAP ? "OFFHEAP" : "ONHEAP";
 my $LIB_DIR = "../../";
 
-my $min_heap = $OFFHEAP ? "200m" : ($CACHE_SIZE_IN_GB + 1) . "g";
+my $offHeapSize;
+my $min_heap;
+if ($CACHE_SIZE_IN_GB < 1) {
+  $min_heap = $OFFHEAP ? "200m" : (($CACHE_SIZE_IN_GB * 1000) + 100) . "m";
+  $offHeapSize = $OFFHEAP ? (($CACHE_SIZE_IN_GB * 1000) . "M") : "0";
+}
+else {
+  $min_heap = $OFFHEAP ? "200m" : ($CACHE_SIZE_IN_GB + 1) . "g";
+  $offHeapSize = $OFFHEAP ? ($CACHE_SIZE_IN_GB) . "G" : "0";
+}
+
 my $max_heap = $min_heap;
 my $max_direct_memory_size = $CACHE_SIZE_IN_GB * 2;
+
+
+
 
 my $max_value_size_in_bytes = 1000;
 my $min_value_size_in_bytes = 200;
@@ -36,7 +50,7 @@ my @libs = (
 	    ".",
 	    "jyaml-1.3.jar",
 	    "ehcache-pounder-$VERSION.jar",
-	    "ehcache-core-ee.jar",
+	    "ehcache-core-ee-${EHCACHE_VERSION}.jar",
 	    "slf4j-api-1.5.11.jar",
 	    "slf4j-jdk14-1.5.11.jar"
 	    );
@@ -52,7 +66,7 @@ my $CONFIG_YML = <<"EOF";
 storeType: ${STORE_TYPE}
 threadCount: 33
 entryCount: $entry_count
-offHeapSize: "${CACHE_SIZE_IN_GB}G"
+offHeapSize: "${offHeapSize}"
 maxOnHeapCount: ${max_on_heap_count}
 batchCount: 50000
 maxValueSize: $max_value_size_in_bytes

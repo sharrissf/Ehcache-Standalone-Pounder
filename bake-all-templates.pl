@@ -3,6 +3,8 @@
 use strict;
 
 my %templates = (
+		 "500MB-BigMemory" => [.5, 1],
+		 "500MB-on-heap" => [.5, 0],
 		 "1GB-BigMemory" => [1, 1],
 		 "1GB-on-heap" => [1, 0],
 		 "10GB-BigMemory" => [10, 1],
