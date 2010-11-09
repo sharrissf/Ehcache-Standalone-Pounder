@@ -7,7 +7,7 @@ use strict;
 
 my ($TEMPLATE_NAME, $CACHE_SIZE_IN_GB, $OFFHEAP) = @ARGV;
 
-my $VERSION = "0.0.4-SNAPSHOT";
+my $VERSION = "0.0.5-SNAPSHOT";
 my $EHCACHE_VERSION = "2.3.0";
 my $POUNDER_LOGFILE = "/tmp/pounder.log";
 my $POUNDER_GC_LOGFILE = "/tmp/pounder.gc.log";
