@@ -61,355 +61,411 @@ import org.ho.yaml.Yaml;
  * 
  */
 public class EhcachePounder {
-  public enum StoreType {
-    OFFHEAP, ONHEAP, DISK
-  };
+	public enum StoreType {
+		OFFHEAP, ONHEAP, DISK
+	};
 
-  private final int maxOnHeapCount;
-  private final int batchCount;
-  private final int maxValueSize;
-  private final int minValueSize;
-  private final int hotSetPercentage;
-  private final int rounds;
-  private final int updatePercentage;
-  private final String diskStorePath;
-  private static final Random random = new Random();
+	private final int maxOnHeapCount;
+	private final int batchCount;
+	private final int maxValueSize;
+	private final int minValueSize;
+	private final int hotSetPercentage;
+	private final int rounds;
+	private final int updatePercentage;
+	private final String diskStorePath;
+	private final int readSampleSize;
+	private static final Random random = new Random();
 
-  private volatile boolean isWarmup = true;
-  private volatile AtomicLong maxBatchTimeMillis = new AtomicLong();
+	private volatile boolean isWarmup = true;
+	private volatile AtomicLong maxBatchTimeMillis = new AtomicLong();
 
-  private CacheManager cacheManager;
+	private CacheManager cacheManager;
 
-  private Ehcache cache;
-  private final long entryCount;
-  private final int threadCount;
-  private final String offHeapSize;
-  private final Results results;
-  private final StoreType storeType;
+	private Ehcache cache;
+	private final long entryCount;
+	private final int threadCount;
+	private final String offHeapSize;
+	private final Results results;
+	private final StoreType storeType;
+	private final AtomicLong maxGetTime = new AtomicLong(0);
 
-  /**
-   * 
-   * @param storeType
-   *          - ONHEAP| OFFHEAP|DISK
-   * @param threadCount
-   *          - Number of threads executing operations
-   * @param entryCount
-   *          - Total number of entries in the load phase and total number of
-   *          operations in each of the subsequent rounds.
-   * @param offHeapSize
-   *          - Size in bytes of the off heap store (i.e. 1G)
-   * @param maxOnHeapCount
-   *          - Number of entries to be stored on heap (keep low if possible)
-   * @param batchCount
-   *          - Number of operations per status update/value size change (Making
-   *          this too low can impact performance)
-   * @param maxValueSize
-   *          - Max size in bytes of the value being put
-   * @param minValueSize
-   *          - min size in bytes of the value being put
-   * @param hotSetPercentage
-   *          - percentage of time to hit the onHeap Cache
-   * @param rounds
-   *          - number of rounds of entryCount operations
-   * @param updatePercentage
-   *          - percentage of time to do an update instead of a read
-   * @param diskStorePath
-   *          - location of disk store file
-   * @throws InterruptedException
-   */
-  public EhcachePounder(StoreType storeType, int threadCount, long entryCount, String offHeapSize, int maxOnHeapCount,
-      int batchCount, int maxValueSize, int minValueSize, int hotSetPercentage, int rounds, int updatePercentage,
-      String diskStorePath) throws InterruptedException {
-    this.storeType = storeType;
-    this.entryCount = entryCount;
-    this.threadCount = threadCount;
-    this.offHeapSize = offHeapSize;
-    this.maxOnHeapCount = maxOnHeapCount;
-    this.batchCount = batchCount;
-    this.maxValueSize = maxValueSize;
-    this.minValueSize = minValueSize;
-    this.hotSetPercentage = hotSetPercentage;
-    this.rounds = rounds;
-    this.updatePercentage = updatePercentage;
-    this.diskStorePath = diskStorePath;
-    initializeCache(storeType);
-    results = new Results(storeType);
-  }
+	/**
+	 * 
+	 * @param storeType
+	 *            - ONHEAP| OFFHEAP|DISK
+	 * @param threadCount
+	 *            - Number of threads executing operations
+	 * @param entryCount
+	 *            - Total number of entries in the load phase and total number
+	 *            of operations in each of the subsequent rounds.
+	 * @param offHeapSize
+	 *            - Size in bytes of the off heap store (i.e. 1G)
+	 * @param maxOnHeapCount
+	 *            - Number of entries to be stored on heap (keep low if
+	 *            possible)
+	 * @param batchCount
+	 *            - Number of operations per status update/value size change
+	 *            (Making this too low can impact performance)
+	 * @param maxValueSize
+	 *            - Max size in bytes of the value being put
+	 * @param minValueSize
+	 *            - min size in bytes of the value being put
+	 * @param hotSetPercentage
+	 *            - percentage of time to hit the onHeap Cache
+	 * @param rounds
+	 *            - number of rounds of entryCount operations
+	 * @param updatePercentage
+	 *            - percentage of time to do an update instead of a read
+	 * @param diskStorePath
+	 *            - location of disk store file
+	 * @throws InterruptedException
+	 */
+	public EhcachePounder(StoreType storeType, int threadCount,
+			long entryCount, String offHeapSize, int maxOnHeapCount,
+			int batchCount, int maxValueSize, int minValueSize,
+			int hotSetPercentage, int rounds, int updatePercentage,
+			String diskStorePath) throws InterruptedException {
+		this.storeType = storeType;
+		this.entryCount = entryCount;
+		this.threadCount = threadCount;
+		this.offHeapSize = offHeapSize;
+		this.maxOnHeapCount = maxOnHeapCount;
+		this.batchCount = batchCount;
+		this.maxValueSize = maxValueSize;
+		this.minValueSize = minValueSize;
+		this.hotSetPercentage = hotSetPercentage;
+		this.rounds = rounds;
+		this.updatePercentage = updatePercentage;
+		this.diskStorePath = diskStorePath;
+		this.readSampleSize = 1;
+		initializeCache(storeType);
+		results = new Results(storeType);
+	}
 
-  /**
-   * Kicks off the run of the test for this node
-   * 
-   * NOTE: It will wait for nodeCount nodes before actually running
-   * 
-   * @throws InterruptedException
-   */
-  public void start() throws InterruptedException {
+	/**
+	 * Kicks off the run of the test for this node
+	 * 
+	 * NOTE: It will wait for nodeCount nodes before actually running
+	 * 
+	 * @throws InterruptedException
+	 */
+	public void start() throws InterruptedException {
 
-    System.out.println(System.currentTimeMillis() + " Starting with threadCount: " + threadCount + " entryCount: "
-        + entryCount + " Max Length: " + maxValueSize);
-    for (int i = 0; i < rounds; i++) {
-      final long totalTime = performCacheOperationsInThreads(isWarmup);
-      final int tps = (int) (entryCount / (totalTime / 1000d));
-      System.out.println(System.currentTimeMillis() + " ROUND " + i + " size: " + cache.getSize());
-      System.out.println(System.currentTimeMillis() + " Took: " + totalTime + " final size was " + cache.getSize()
-          + " TPS: " + tps);
-      results.addRound(totalTime, cache.getSize(), tps);
-      if (isWarmup) {
-        this.maxBatchTimeMillis.set(0);
-      }
-      isWarmup = false;
-    }
-    results.printResults(System.out);
-  }
+		System.out
+				.println(System.currentTimeMillis()
+						+ " Starting with threadCount: " + threadCount
+						+ " entryCount: " + entryCount + " Max Length: "
+						+ maxValueSize);
+		for (int i = 0; i < rounds; i++) {
+			final long totalTime = performCacheOperationsInThreads(isWarmup);
+			final int tps = (int) (entryCount / (totalTime / 1000d));
+			System.out.println(System.currentTimeMillis() + " ROUND " + i
+					+ " size: " + cache.getSize());
+			System.out.println(System.currentTimeMillis() + " Took: "
+					+ totalTime + " final size was " + cache.getSize()
+					+ " TPS: " + tps);
+			results.addRound(totalTime, cache.getSize(), tps);
+			if (isWarmup) {
+				this.maxBatchTimeMillis.set(0);
+			}
+			isWarmup = false;
+		}
+		results.setMaxGetTime(maxGetTime.get());
+		results.printResults(System.out);
+	}
 
-  private long performCacheOperationsInThreads(final boolean warmup) throws InterruptedException {
-    long t1 = System.currentTimeMillis();
+	private long performCacheOperationsInThreads(final boolean warmup)
+			throws InterruptedException {
+		long t1 = System.currentTimeMillis();
 
-    Thread[] threads = new Thread[threadCount];
-    for (int i = 0; i < threads.length; i++) {
+		Thread[] threads = new Thread[threadCount];
+		for (int i = 0; i < threads.length; i++) {
 
-      final int current = i;
-      threads[i] = new Thread() {
+			final int current = i;
+			threads[i] = new Thread() {
 
-        public void run() {
-          try {
-            executeLoad(warmup, (entryCount / threadCount) * current, (entryCount / threadCount) * (current + 1));
-          } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-          }
-        }
-      };
-      threads[i].start();
-    }
-    for (int i = 0; i < threads.length; i++) {
-      threads[i].join();
-    }
-    long totalTime = (System.currentTimeMillis() - t1);
-    return totalTime;
-  }
+				public void run() {
+					try {
+						executeLoad(warmup, (entryCount / threadCount)
+								* current, (entryCount / threadCount)
+								* (current + 1));
+					} catch (InterruptedException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			};
+			threads[i].start();
+		}
+		for (int i = 0; i < threads.length; i++) {
+			threads[i].join();
+		}
+		long totalTime = (System.currentTimeMillis() - t1);
+		return totalTime;
+	}
 
-  private void executeLoad(final boolean warmup, final long start, final long entryCount) throws InterruptedException {
+	private void executeLoad(final boolean warmup, final long start,
+			final long entryCount) throws InterruptedException {
 
-    byte[] value = buildValue();
-    int readCount = 0;
-    int writeCount = 0;
-    long t = System.currentTimeMillis();
-    int currentSize = 1;
+		byte[] value = buildValue();
+		int readCount = 0;
+		int writeCount = 0;
+		long t = System.currentTimeMillis();
+		int currentSize = 1;
 
-    for (long i = start; i < entryCount; i++) {
+		for (long i = start; i < entryCount; i++) {
 
-      if ((i + 1) % batchCount == 0) {
+			if ((i + 1) % batchCount == 0) {
 
-        long batchTimeMillis = (System.currentTimeMillis() - t);
-        synchronized (maxBatchTimeMillis) {
-          maxBatchTimeMillis.set(batchTimeMillis > maxBatchTimeMillis.get() ? batchTimeMillis : maxBatchTimeMillis
-              .get());
-        }
-        currentSize = cache.getSize();
+				long batchTimeMillis = (System.currentTimeMillis() - t);
+				synchronized (maxBatchTimeMillis) {
+					maxBatchTimeMillis
+							.set(batchTimeMillis > maxBatchTimeMillis.get() ? batchTimeMillis
+									: maxBatchTimeMillis.get());
+				}
+				currentSize = cache.getSize();
 
-        System.out.println(System.currentTimeMillis() + " size:" + (currentSize) + " batch time: " + batchTimeMillis
-            + " Max batch time millis: " + (warmup ? "warmup" : ("" + maxBatchTimeMillis)) + " value size:"
-            + value.length + " READ: " + readCount + " WRITE: " + writeCount + " Hotset: " + hotSetPercentage);
-        value = buildValue();
-        t = System.currentTimeMillis();
-        readCount = 0;
-        writeCount = 0;
+				System.out.println(System.currentTimeMillis() + " size:"
+						+ (currentSize) + " batch time: " + batchTimeMillis
+						+ " Max batch time millis: "
+						+ (warmup ? "warmup" : ("" + maxBatchTimeMillis))
+						+ " value size:" + value.length + " READ: " + readCount
+						+ " WRITE: " + writeCount + " Hotset: "
+						+ hotSetPercentage);
+				value = buildValue();
+				t = System.currentTimeMillis();
+				readCount = 0;
+				writeCount = 0;
 
-      }
-      if (warmup || isWrite()) {
-        Object k = createKeyFromCount(i);
+			}
+			if (warmup || isWrite()) {
+				Object k = createKeyFromCount(i);
 
-        cache.put(new Element(k, value.clone()));
-        writeCount++;
-      }
-      if (!isWrite() && !warmup) {
-        readEntry(createKeyFromCount(pickNextReadNumber(i, currentSize)));
-        readCount++;
-      }
-    }
+				cache.put(new Element(k, value.clone()));
+				writeCount++;
+			}
+			if (!isWrite() && !warmup) {
+				long getTime = 0;
+				if (readCount % threadCount == 0) {
+					getTime = System.currentTimeMillis();
+				}
+				readEntry(createKeyFromCount(pickNextReadNumber(i, currentSize)));
+				if (getTime > 0) {
+					long ct = System.currentTimeMillis() - getTime;
+					if (maxGetTime.get() < ct) {
+						maxGetTime.set(ct);
+					}
+				}
+				readCount++;
+			}
+		}
 
-  }
+	}
 
-  private long pickNextReadNumber(long i, int currentSize) {
-    if ((i % 100) < hotSetPercentage) {
-      return random.nextInt(maxOnHeapCount);
-    } else {
-      return random.nextInt(currentSize);
-    }
-  }
+	private long pickNextReadNumber(long i, int currentSize) {
+		if ((i % 100) < hotSetPercentage) {
+			return random.nextInt(maxOnHeapCount);
+		} else {
+			return random.nextInt(currentSize);
+		}
+	}
 
-  private boolean isWrite() {
+	private boolean isWrite() {
 
-    return random.nextInt(100) < updatePercentage;
-  }
+		return random.nextInt(100) < updatePercentage;
+	}
 
-  private Object createKeyFromCount(long i) {
-    return "K" + i + "-";
-  }
+	private Object createKeyFromCount(long i) {
+		return "K" + i + "-";
+	}
 
-  private void readEntry(Object key) {
-    Element e = cache.get(key);
-    if (e == null) {
-      return;
-    }
-    byte[] value = (byte[]) e.getValue();
+	private void readEntry(Object key) {
 
-    if (!validateValue(value))
-      throw new RuntimeException("Invalid Value:");
-  }
+		Element e = cache.get(key);
+		if (e == null) {
+			return;
+		}
+		byte[] value = (byte[]) e.getValue();
 
-  /**
-   * create an entry of random size within the tests params and add in a basic
-   * check sum in the beginning and end of the value
-   * 
-   * @return byte[] for the value
-   */
-  private byte[] buildValue() {
-    Random r = new Random();
-    int size = r.nextInt(maxValueSize - minValueSize + 10) + minValueSize;
-    byte[] bytes = new byte[size];
-    for (int i = 0; i < bytes.length; i++) {
-      if (i < 5) {
-        bytes[i] = (byte) i;
-      } else if ((bytes.length - i) < 5) {
-        bytes[i] = (byte) (bytes.length - i);
-      } else {
-        bytes[i] = (byte) r.nextInt(128);
-      }
-    }
-    return bytes;
-  }
+		if (!validateValue(value))
+			throw new RuntimeException("Invalid Value:");
+	}
 
-  /**
-   * 
-   * @param bytes
-   *          - make sure the checksum is still legit when the entry is
-   *          retrieved
-   * @return boolean as to whether the entry is valid
-   */
-  private boolean validateValue(byte[] bytes) {
-    for (byte i = 0; i < 5; i++) {
-      if (i != bytes[i]) {
-        System.out.println(System.currentTimeMillis() + " First Expected: " + i + " got: " + bytes[i]);
-        return false;
-      }
-    }
+	/**
+	 * create an entry of random size within the tests params and add in a basic
+	 * check sum in the beginning and end of the value
+	 * 
+	 * @return byte[] for the value
+	 */
+	private byte[] buildValue() {
+		Random r = new Random();
+		int size = r.nextInt(maxValueSize - minValueSize + 10) + minValueSize;
+		byte[] bytes = new byte[size];
+		for (int i = 0; i < bytes.length; i++) {
+			if (i < 5) {
+				bytes[i] = (byte) i;
+			} else if ((bytes.length - i) < 5) {
+				bytes[i] = (byte) (bytes.length - i);
+			} else {
+				bytes[i] = (byte) r.nextInt(128);
+			}
+		}
+		return bytes;
+	}
 
-    for (byte i = 1; i < 5; i++) {
-      if (i != bytes[bytes.length - i]) {
-        System.out.println(System.currentTimeMillis() + " Last Expected: " + i + " got: " + bytes[bytes.length - i]);
-        return false;
-      }
-    }
-    return true;
-  }
+	/**
+	 * 
+	 * @param bytes
+	 *            - make sure the checksum is still legit when the entry is
+	 *            retrieved
+	 * @return boolean as to whether the entry is valid
+	 */
+	private boolean validateValue(byte[] bytes) {
+		for (byte i = 0; i < 5; i++) {
+			if (i != bytes[i]) {
+				System.out.println(System.currentTimeMillis()
+						+ " First Expected: " + i + " got: " + bytes[i]);
+				return false;
+			}
+		}
 
-  private void initializeCache(StoreType storeType) {
-    System.getProperties().setProperty("net.sf.ehcache.offheap.testCache.config.maximumSegmentCount", "64k");
-    Configuration cacheManagerConfig = new Configuration();
+		for (byte i = 1; i < 5; i++) {
+			if (i != bytes[bytes.length - i]) {
+				System.out.println(System.currentTimeMillis()
+						+ " Last Expected: " + i + " got: "
+						+ bytes[bytes.length - i]);
+				return false;
+			}
+		}
+		return true;
+	}
 
-    // Add default cache
-    cacheManagerConfig.addDefaultCache(new CacheConfiguration());
+	private void initializeCache(StoreType storeType) {
+		System.getProperties().setProperty(
+				"net.sf.ehcache.offheap.testCache.config.maximumSegmentCount",
+				"64k");
+		Configuration cacheManagerConfig = new Configuration();
 
-    // Create Cache
-    CacheConfiguration cacheConfig = null;
-    if (storeType.equals(StoreType.OFFHEAP)) {
-      cacheConfig = new CacheConfiguration("testCache", -1).eternal(true).maxElementsInMemory(maxOnHeapCount)
-          .overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize);
-    } else if (storeType.equals(StoreType.ONHEAP)) {
-      cacheConfig = new CacheConfiguration("testCache", -1).eternal(true);
-    } else if (storeType.equals(StoreType.DISK)) {
-      cacheManagerConfig.addDiskStore(new DiskStoreConfiguration().path(diskStorePath));
-      cacheConfig = new CacheConfiguration("testCache", -1).eternal(true).maxElementsInMemory(maxOnHeapCount)
-          .overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize).diskPersistent(true).diskAccessStripes(16);
-    }
-    cacheManagerConfig.addCache(cacheConfig);
+		// Add default cache
+		cacheManagerConfig.addDefaultCache(new CacheConfiguration());
 
-    this.cacheManager = new CacheManager(cacheManagerConfig);
-    System.out.println("Printing Ehchache configuration:");
-    this.cache = this.cacheManager.getCache("testCache");
-    System.out.println(cacheManager.getActiveConfigurationText("testCache"));
-  }
+		// Create Cache
+		CacheConfiguration cacheConfig = null;
+		if (storeType.equals(StoreType.OFFHEAP)) {
+			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true)
+					.maxElementsInMemory(maxOnHeapCount)
+					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize);
+		} else if (storeType.equals(StoreType.ONHEAP)) {
+			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true);
+		} else if (storeType.equals(StoreType.DISK)) {
+			cacheManagerConfig.addDiskStore(new DiskStoreConfiguration()
+					.path(diskStorePath));
+			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true)
+					.maxElementsInMemory(maxOnHeapCount)
+					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize)
+					.diskPersistent(true).diskAccessStripes(16);
+		}
+		cacheManagerConfig.addCache(cacheConfig);
 
-  @SuppressWarnings("unchecked")
-  public static final void main(String[] args) throws Exception {
-    Map<String, Object> config = (Map<String, Object>) Yaml.load(new FileReader("config.yml"));
+		this.cacheManager = new CacheManager(cacheManagerConfig);
+		System.out.println("Printing Ehchache configuration:");
+		this.cache = this.cacheManager.getCache("testCache");
+		System.out
+				.println(cacheManager.getActiveConfigurationText("testCache"));
+	}
 
-    System.out.println(" Printing Pounder YAML config values:");
-    for (String k : config.keySet()) {
-      System.out.println(k + ": " + config.get(k));
-    }
+	@SuppressWarnings("unchecked")
+	public static final void main(String[] args) throws Exception {
+		Map<String, Object> config = (Map<String, Object>) Yaml
+				.load(new FileReader("config.yml"));
 
-    StoreType storeType = StoreType.valueOf((String) config.get("storeType"));
-    Integer entryCount = (Integer) config.get("entryCount");
-    int threadCount = (Integer) config.get("threadCount");
-    String offHeapSize = (String) config.get("offHeapSize");
-    int maxOnHeapCount = (Integer) config.get("maxOnHeapCount");
-    int batchCount = (Integer) config.get("batchCount");
-    int maxValueSize = (Integer) config.get("maxValueSize");
-    int minValueSize = (Integer) config.get("minValueSize");
-    int hotSetPercentage = (Integer) config.get("hotSetPercentage");
-    int rounds = (Integer) config.get("rounds");
-    int updatePercentage = (Integer) config.get("updatePercentage");
-    String diskStorePath = (String) config.get("diskStorePath");
-    new EhcachePounder(storeType, threadCount, entryCount, offHeapSize, maxOnHeapCount, batchCount, maxValueSize,
-        minValueSize, hotSetPercentage, rounds, updatePercentage, diskStorePath).start();
-  }
+		System.out.println(" Printing Pounder YAML config values:");
+		for (String k : config.keySet()) {
+			System.out.println(k + ": " + config.get(k));
+		}
 
-  private static final class Results {
-    private static final List<Round> rounds = new LinkedList<Round>();
-    private final StoreType storeType;
+		StoreType storeType = StoreType.valueOf((String) config
+				.get("storeType"));
+		Integer entryCount = (Integer) config.get("entryCount");
+		int threadCount = (Integer) config.get("threadCount");
+		String offHeapSize = (String) config.get("offHeapSize");
+		int maxOnHeapCount = (Integer) config.get("maxOnHeapCount");
+		int batchCount = (Integer) config.get("batchCount");
+		int maxValueSize = (Integer) config.get("maxValueSize");
+		int minValueSize = (Integer) config.get("minValueSize");
+		int hotSetPercentage = (Integer) config.get("hotSetPercentage");
+		int rounds = (Integer) config.get("rounds");
+		int updatePercentage = (Integer) config.get("updatePercentage");
+		String diskStorePath = (String) config.get("diskStorePath");
+		new EhcachePounder(storeType, threadCount, entryCount, offHeapSize,
+				maxOnHeapCount, batchCount, maxValueSize, minValueSize,
+				hotSetPercentage, rounds, updatePercentage, diskStorePath)
+				.start();
+	}
 
-    public Results(StoreType storeType) {
-      this.storeType = storeType;
-    }
+	private static final class Results {
+		private final List<Round> rounds = new LinkedList<Round>();
+		private final StoreType storeType;
+		private long maxGetTime;
 
-    public void addRound(final long elapsedTime, final int finalSize, final int tps) {
-      rounds.add(new Round(elapsedTime, finalSize, tps));
-    }
+		public Results(StoreType storeType) {
+			this.storeType = storeType;
+		}
 
-    public void printResults(final PrintStream out) {
-      out.println("All Rounds:");
-      float tpsSum = 0;
-      long timeSum = 0;
-      for (int i = 0; i < rounds.size(); i++) {
-        final Round round = rounds.get(i);
-        if (i > 0) {
-          // exclude round 1 from the averages, since it's always an outlier. 
-          tpsSum += round.getThroughputTPS();
-          timeSum += round.getElapsedTimeMillis();
-        }
-        out.println("Round " + (i + 1) + ": elapsed time: " + round.getElapsedTimeMillis() + ", final cache size: "
-            + round.getFinalCacheSize() + ", tps: " + round.getThroughputTPS());
-      }
-      out
-          .println((StoreType.OFFHEAP.equals(storeType) ? "BigMemory" : storeType.toString())
-              + " Pounder Final Results");
-      out.println("TOTAL TIME: " + timeSum + "ms, AVG TPS (excluding round 1): " + tpsSum / (rounds.size() - 1));
-    }
-  }
+		public void addRound(final long elapsedTime, final int finalSize,
+				final int tps) {
+			rounds.add(new Round(elapsedTime, finalSize, tps));
+		}
 
-  private static final class Round {
-    private final long elapsedTime;
-    private final int finalSize;
-    private final int tps;
+		public void setMaxGetTime(long maxGetTime) {
+			this.maxGetTime = maxGetTime;
+		}
 
-    public Round(final long elapsedTime, final int finalSize, final int tps) {
-      this.elapsedTime = elapsedTime;
-      this.finalSize = finalSize;
-      this.tps = tps;
-    }
+		public void printResults(final PrintStream out) {
+			out.println("All Rounds:");
+			float tpsSum = 0;
+			long timeSum = 0;
+			for (int i = 0; i < rounds.size(); i++) {
+				final Round round = rounds.get(i);
+				if (i > 0) {
+					// exclude round 1 from the averages, since it's always an
+					// outlier.
+					tpsSum += round.getThroughputTPS();
+					timeSum += round.getElapsedTimeMillis();
+				}
+				out.println("Round " + (i + 1) + ": elapsed time: "
+						+ round.getElapsedTimeMillis() + ", final cache size: "
+						+ round.getFinalCacheSize() + ", tps: "
+						+ round.getThroughputTPS());
+			}
+			out.println((StoreType.OFFHEAP.equals(storeType) ? "BigMemory"
+					: storeType.toString()) + " Pounder Final Results");
+			out.println("TOTAL TIME: " + timeSum
+					+ "ms, AVG TPS (excluding round 1): " + tpsSum
+					/ (rounds.size() - 1) + " MAX GET LATENCY: " + maxGetTime);
+		}
+	}
 
-    public long getElapsedTimeMillis() {
-      return elapsedTime;
-    }
+	private static final class Round {
+		private final long elapsedTime;
+		private final int finalSize;
+		private final int tps;
 
-    public int getFinalCacheSize() {
-      return finalSize;
-    }
+		public Round(final long elapsedTime, final int finalSize, final int tps) {
+			this.elapsedTime = elapsedTime;
+			this.finalSize = finalSize;
+			this.tps = tps;
+		}
 
-    public int getThroughputTPS() {
-      return tps;
-    }
-  }
+		public long getElapsedTimeMillis() {
+			return elapsedTime;
+		}
+
+		public int getFinalCacheSize() {
+			return finalSize;
+		}
+
+		public int getThroughputTPS() {
+			return tps;
+		}
+	}
 }

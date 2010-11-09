@@ -58,4 +58,10 @@
 			<version>2.3.0</version>
 		</dependency>
 	</dependencies>
+	<repositories>
+		<repository>
+			<id>terracotta-snapshots</id>
+			<url>http://www.terracotta.org/download/reflector/releases</url>
+		</repository>
+	</repositories>
 </project>
