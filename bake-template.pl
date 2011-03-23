@@ -7,17 +7,23 @@ use strict;
 
 my ($TEMPLATE_NAME, $CACHE_SIZE_IN_GB, $OFFHEAP) = @ARGV;
 
+my $UNIX_LIB_DIR = "../../";
+my $WIN_LIB_DIR = "..\\..\\";
+my $UNIX_POUNDER_LOGFILE = "/tmp/pounder.log";
+my $WIN_POUNDER_LOGFILE = "%TEMP%\\pounder.log";
+my $UNIX_POUNDER_GC_LOGFILE = "/tmp/pounder.gc.log";
+my $WIN_POUNDER_GC_LOGFILE = "%TEMP%\\pounder.gc.log";
+my $disk_store_path = "java.io.tmpdir";
+
 my $VERSION = "0.0.5-SNAPSHOT";
 my $EHCACHE_VERSION = "2.3.0";
-my $POUNDER_LOGFILE = "/tmp/pounder.log";
-my $POUNDER_GC_LOGFILE = "/tmp/pounder.gc.log";
 
 my $SRC_DIR ="src";
 
 my $TEMPLATE_BASE = "$SRC_DIR/assemble/templates";
 my $TEMPLATE_DIR = $TEMPLATE_BASE . "/" . $TEMPLATE_NAME;
 my $STORE_TYPE = $OFFHEAP ? "OFFHEAP" : "ONHEAP";
-my $LIB_DIR = "../../";
+
 
 my $offHeapSize;
 my $min_heap;
@@ -44,7 +50,6 @@ my $max_on_heap_count = $OFFHEAP ? 5000 : $entry_count;
 
 my $rounds = ($CACHE_SIZE_IN_GB < 10 ? 40 : 4);
 
-my $disk_store_path = "/tmp";
 
 my @libs = (
 	    ".",
@@ -55,11 +60,18 @@ my @libs = (
 	    "slf4j-jdk14-1.5.11.jar"
 	    );
 
-my $classpath = join ":$LIB_DIR", @libs;
-$classpath = $LIB_DIR . $classpath;
+my $unixClasspath = join ":$UNIX_LIB_DIR", @libs;
+$unixClasspath = $UNIX_LIB_DIR . $unixClasspath;
 
-my $RUN_POUNDER = <<"EOF";
-java -server -verbose:gc -Xloggc:${POUNDER_GC_LOGFILE} -XX:+PrintGCDetails -XX:+PrintTenuringDistribution -XX:+PrintGCTimeStamps -XX:+UseParallelGC -Dorg.terracotta.license.path=${LIB_DIR}terracotta-license.key -Xms${min_heap} -Xmx${max_heap} -XX:+UseCompressedOops -XX:MaxDirectMemorySize=${max_direct_memory_size}G -cp $classpath org.sharrissf.ehcache.tools.EhcachePounder | tee ${POUNDER_LOGFILE}
+my $winClasspath = join ";$WIN_LIB_DIR", @libs;
+$winClasspath = $WIN_LIB_DIR . $winClasspath;
+
+my $UNIX_RUN_POUNDER = <<"EOF";
+java -server -verbose:gc -Xloggc:${UNIX_POUNDER_GC_LOGFILE} -XX:+PrintGCDetails -XX:+PrintTenuringDistribution -XX:+PrintGCTimeStamps -XX:+UseParallelGC -Dorg.terracotta.license.path=${UNIX_LIB_DIR}terracotta-license.key -Xms${min_heap} -Xmx${max_heap} -XX:+UseCompressedOops -XX:MaxDirectMemorySize=${max_direct_memory_size}G -cp $unixClasspath org.sharrissf.ehcache.tools.EhcachePounder | tee ${UNIX_POUNDER_LOGFILE}
+EOF
+
+my $WIN_RUN_POUNDER = <<"EOF";
+java -server -verbose:gc -Xloggc:${WIN_POUNDER_GC_LOGFILE} -XX:+PrintGCDetails -XX:+PrintTenuringDistribution -XX:+PrintGCTimeStamps -XX:+UseParallelGC -Dorg.terracotta.license.path=${WIN_LIB_DIR}terracotta-license.key -Xms${min_heap} -Xmx${max_heap} -XX:+UseCompressedOops -XX:MaxDirectMemorySize=${max_direct_memory_size}G -cp $winClasspath org.sharrissf.ehcache.tools.EhcachePounder 
 EOF
 
 my $CONFIG_YML = <<"EOF";
@@ -77,15 +89,20 @@ updatePercentage: 10
 diskStorePath: ${disk_store_path}
 EOF
 
-print "run-pounder.sh\n" . $RUN_POUNDER . "\n";
+print "run-pounder.sh\n" . $UNIX_RUN_POUNDER . "\n";
+print "run-pounder.bat\n" . $WIN_RUN_POUNDER . "\n";
 print "CONFIG\n" . $CONFIG_YML . "\n";
 
 `mkdir $TEMPLATE_DIR` unless -d $TEMPLATE_DIR;
 die "$TEMPLATE_DIR does not exist" unless -d $TEMPLATE_DIR;
 
-open FILE, ">$TEMPLATE_DIR/run-pounder.sh" or die "Can't open $TEMPLATE_DIR/run-pounder.sh for writeing";
-print FILE $RUN_POUNDER;
-close FILE;
+open SH_FILE, ">$TEMPLATE_DIR/run-pounder.sh" or die "Can't open $TEMPLATE_DIR/run-pounder.sh for writing";
+print SH_FILE $UNIX_RUN_POUNDER;
+close SH_FILE;
+
+open BAT_FILE, ">$TEMPLATE_DIR/run-pounder.bat" or die "Can't open $TEMPLATE_DIR/run-pounder.bat for writing";
+print BAT_FILE $WIN_RUN_POUNDER;
+close BAT_FILE;
 
 open FILE, ">$TEMPLATE_DIR/config.yml" or die "Can't open $TEMPLATE_DIR/config.yml for writing";
 print FILE $CONFIG_YML;

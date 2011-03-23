@@ -9,4 +9,4 @@ minValueSize: 200
 hotSetPercentage: 99
 rounds: 4
 updatePercentage: 10
-diskStorePath: /tmp
+diskStorePath: java.io.tmpdir
