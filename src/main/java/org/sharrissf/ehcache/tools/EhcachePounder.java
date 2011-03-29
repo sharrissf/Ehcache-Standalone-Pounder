@@ -1,7 +1,10 @@
 package org.sharrissf.ehcache.tools;
 
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +91,7 @@ public class EhcachePounder {
 	private final Results results;
 	private final StoreType storeType;
 	private final AtomicLong maxGetTime = new AtomicLong(0);
+	private final PrintWriter csvOut;
 
 	/**
 	 * 
@@ -119,12 +123,13 @@ public class EhcachePounder {
 	 * @param diskStorePath
 	 *            - location of disk store file
 	 * @throws InterruptedException
+	 * @throws IOException
 	 */
 	public EhcachePounder(StoreType storeType, int threadCount,
 			long entryCount, String offHeapSize, int maxOnHeapCount,
 			int batchCount, int maxValueSize, int minValueSize,
 			int hotSetPercentage, int rounds, int updatePercentage,
-			String diskStorePath) throws InterruptedException {
+			String diskStorePath) throws InterruptedException, IOException {
 		this.storeType = storeType;
 		this.entryCount = entryCount;
 		this.threadCount = threadCount;
@@ -139,7 +144,8 @@ public class EhcachePounder {
 		this.diskStorePath = diskStorePath;
 		this.readSampleSize = 1;
 		initializeCache(storeType);
-		results = new Results(storeType);
+		this.results = new Results(storeType);
+		this.csvOut = new PrintWriter(new FileWriter("results.csv"));
 	}
 
 	/**
@@ -157,13 +163,9 @@ public class EhcachePounder {
 						+ " entryCount: " + entryCount + " Max Length: "
 						+ maxValueSize);
 		for (int i = 0; i < rounds; i++) {
-			final long totalTime = performCacheOperationsInThreads(isWarmup);
+			final long totalTime = performCacheOperationsInThreads(i, isWarmup);
 			final int tps = (int) (entryCount / (totalTime / 1000d));
-			System.out.println(System.currentTimeMillis() + " ROUND " + i
-					+ " size: " + cache.getSize());
-			System.out.println(System.currentTimeMillis() + " Took: "
-					+ totalTime + " final size was " + cache.getSize()
-					+ " TPS: " + tps);
+			outputRoundData(i, cache.getSize(), totalTime, tps);
 			results.addRound(totalTime, cache.getSize(), tps);
 			if (isWarmup) {
 				this.maxBatchTimeMillis.set(0);
@@ -174,8 +176,19 @@ public class EhcachePounder {
 		results.printResults(System.out);
 	}
 
-	private long performCacheOperationsInThreads(final boolean warmup)
-			throws InterruptedException {
+	private void outputRoundData(int round, int cacheSize,
+			final long totalTime, final int tps) {
+		System.out.println(System.currentTimeMillis() + " ROUND " + round
+				+ " size: " + cacheSize);
+		System.out.println(System.currentTimeMillis() + " Took: " + totalTime
+				+ " final size was " + cacheSize + " TPS: " + tps);
+		// csvOut.println(round + "," + cacheSize + ',' + totalTime + ',' +
+		// tps);
+		// csvOut.flush();
+	}
+
+	private long performCacheOperationsInThreads(final int round,
+			final boolean warmup) throws InterruptedException {
 		long t1 = System.currentTimeMillis();
 
 		Thread[] threads = new Thread[threadCount];
@@ -186,7 +199,7 @@ public class EhcachePounder {
 
 				public void run() {
 					try {
-						executeLoad(warmup, (entryCount / threadCount)
+						executeLoad(round, warmup, (entryCount / threadCount)
 								* current, (entryCount / threadCount)
 								* (current + 1));
 					} catch (InterruptedException e) {
@@ -203,7 +216,7 @@ public class EhcachePounder {
 		return totalTime;
 	}
 
-	private void executeLoad(final boolean warmup, final long start,
+	private void executeLoad(int round, final boolean warmup, final long start,
 			final long entryCount) throws InterruptedException {
 
 		byte[] value = buildValue();
@@ -224,13 +237,9 @@ public class EhcachePounder {
 				}
 				currentSize = cache.getSize();
 
-				System.out.println(System.currentTimeMillis() + " size:"
-						+ (currentSize) + " batch time: " + batchTimeMillis
-						+ " Max batch time millis: "
-						+ (warmup ? "warmup" : ("" + maxBatchTimeMillis))
-						+ " value size:" + value.length + " READ: " + readCount
-						+ " WRITE: " + writeCount + " Hotset: "
-						+ hotSetPercentage);
+				outputBatchData(round, System.currentTimeMillis(), warmup,
+						value.length, readCount, writeCount, currentSize,
+						batchTimeMillis);
 				value = buildValue();
 				t = System.currentTimeMillis();
 				readCount = 0;
@@ -258,6 +267,22 @@ public class EhcachePounder {
 				readCount++;
 			}
 		}
+
+	}
+
+	private void outputBatchData(int round, long timeMillis,
+			final boolean warmup, int entrySize, int readCount, int writeCount,
+			int currentSize, long batchTimeMillis) {
+		System.out.println(timeMillis + " size:" + (currentSize)
+				+ " batch time: " + batchTimeMillis
+				+ " Max batch time millis: "
+				+ (warmup ? "warmup" : ("" + maxBatchTimeMillis))
+				+ " value size:" + entrySize + " READ: " + readCount
+				+ " WRITE: " + writeCount + " Hotset: " + hotSetPercentage);
+		csvOut.println(round + "," + timeMillis + "," + currentSize + ","
+				+ batchTimeMillis + "," + warmup + "," + entrySize + ","
+				+ readCount + "," + writeCount + "," + hotSetPercentage);
+		csvOut.flush();
 
 	}
 
