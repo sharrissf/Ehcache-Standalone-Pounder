@@ -15,8 +15,7 @@ my $UNIX_POUNDER_GC_LOGFILE = "/tmp/pounder.gc.log";
 my $WIN_POUNDER_GC_LOGFILE = "%TEMP%\\pounder.gc.log";
 my $disk_store_path = "java.io.tmpdir";
 
-my $VERSION = "0.0.6-SNAPSHOT";
-my $EHCACHE_VERSION = "2.4.1";
+my $VERSION = "0.0.7-SNAPSHOT";
 
 my $SRC_DIR ="src";
 
@@ -55,7 +54,7 @@ my @libs = (
 	    ".",
 	    "jyaml-1.3.jar",
 	    "ehcache-pounder-$VERSION.jar",
-	    "ehcache-core-ee-${EHCACHE_VERSION}.jar",
+	    "ehcache-core-ee.jar",
 	    "slf4j-api-1.6.1.jar",
 	    "slf4j-jdk14-1.6.1.jar"
 	    );
