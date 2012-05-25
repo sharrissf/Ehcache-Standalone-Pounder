@@ -17,6 +17,9 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.DiskStoreConfiguration;
+import net.sf.ehcache.config.MemoryUnit;
+import net.sf.ehcache.config.PersistenceConfiguration;
+import net.sf.ehcache.config.PersistenceConfiguration.Strategy;
 
 import org.ho.yaml.Yaml;
 
@@ -365,9 +368,6 @@ public class EhcachePounder {
 	}
 
 	private void initializeCache(StoreType storeType) {
-		System.getProperties().setProperty(
-				"net.sf.ehcache.offheap.testCache.config.maximumSegmentCount",
-				"64k");
 		Configuration cacheManagerConfig = new Configuration();
 
 		// Add default cache
@@ -384,10 +384,12 @@ public class EhcachePounder {
 		} else if (storeType.equals(StoreType.DISK)) {
 			cacheManagerConfig.addDiskStore(new DiskStoreConfiguration()
 					.path(diskStorePath));
-			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true)
-					.maxElementsInMemory(maxOnHeapCount)
+			cacheConfig = new CacheConfiguration().name("testCache")
+					.eternal(true).maxBytesLocalHeap(100, MemoryUnit.MEGABYTES)
 					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize)
-					.diskPersistent(true).diskAccessStripes(16);
+					.persistence(
+                           new PersistenceConfiguration()
+                            .strategy(Strategy.LOCALENTERPRISE));
 		}
 		cacheManagerConfig.addCache(cacheConfig);
 
