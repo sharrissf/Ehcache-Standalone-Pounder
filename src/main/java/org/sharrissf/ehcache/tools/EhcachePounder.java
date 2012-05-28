@@ -376,11 +376,12 @@ public class EhcachePounder {
 		// Create Cache
 		CacheConfiguration cacheConfig = null;
 		if (storeType.equals(StoreType.OFFHEAP)) {
-			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true)
+			cacheConfig = new CacheConfiguration().name("testCache").eternal(true)
 					.maxElementsInMemory(maxOnHeapCount)
 					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize);
 		} else if (storeType.equals(StoreType.ONHEAP)) {
-			cacheConfig = new CacheConfiguration("testCache", -1).eternal(true);
+			cacheConfig = new CacheConfiguration().name("testCache").eternal(true)
+					.maxElementsInMemory(maxOnHeapCount);
 		} else if (storeType.equals(StoreType.DISK)) {
 			cacheManagerConfig.addDiskStore(new DiskStoreConfiguration()
 					.path(diskStorePath));
