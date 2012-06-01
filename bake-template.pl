@@ -15,7 +15,7 @@ my $UNIX_POUNDER_GC_LOGFILE = "/tmp/pounder.gc.log";
 my $WIN_POUNDER_GC_LOGFILE = "%TEMP%\\pounder.gc.log";
 my $disk_store_path = "java.io.tmpdir";
 
-my $VERSION = "0.0.8-SNAPSHOT";
+my $VERSION = "0.0.9-SNAPSHOT";
 
 my $SRC_DIR ="src";
 
