@@ -10,3 +10,4 @@ hotSetPercentage: 99
 rounds: 4
 updatePercentage: 10
 diskStorePath: java.io.tmpdir
+monitoringEnabled: false

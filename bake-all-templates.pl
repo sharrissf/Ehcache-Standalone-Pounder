@@ -24,7 +24,7 @@ my %templates = (
 foreach my $template_name (sort keys %templates) {
   my $args = $templates{$template_name};
   my $arglist = join " ", @$args;
-  my $cmd = "./bake-template.pl $template_name $arglist";
+  my $cmd = "perl ./bake-template.pl $template_name $arglist";
   print "Executing $cmd\n";
   `$cmd`;
 }

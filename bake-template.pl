@@ -113,6 +113,7 @@ hotSetPercentage: 99
 rounds: ${rounds}
 updatePercentage: 10
 diskStorePath: ${disk_store_path}
+monitoringEnabled: false
 EOF
 
 print "run-pounder.sh\n" . $UNIX_RUN_POUNDER . "\n";
