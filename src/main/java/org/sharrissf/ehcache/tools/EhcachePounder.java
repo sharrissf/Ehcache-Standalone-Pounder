@@ -17,6 +17,7 @@ import net.sf.ehcache.Element;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.DiskStoreConfiguration;
+import net.sf.ehcache.config.ManagementRESTServiceConfiguration;
 import net.sf.ehcache.config.MemoryUnit;
 import net.sf.ehcache.config.PersistenceConfiguration;
 import net.sf.ehcache.config.PersistenceConfiguration.Strategy;
@@ -79,7 +80,6 @@ public class EhcachePounder {
 	private final int rounds;
 	private final int updatePercentage;
 	private final String diskStorePath;
-	private final int readSampleSize;
 	private static final Random random = new Random();
 
 	private volatile boolean isWarmup = true;
@@ -92,7 +92,6 @@ public class EhcachePounder {
 	private final int threadCount;
 	private final String offHeapSize;
 	private final Results results;
-	private final StoreType storeType;
 	private final AtomicLong maxGetTime = new AtomicLong(0);
 	private final PrintWriter csvOut;
 
@@ -125,6 +124,8 @@ public class EhcachePounder {
 	 *            - percentage of time to do an update instead of a read
 	 * @param diskStorePath
 	 *            - location of disk store file
+	 * @param monitoringEnabled
+	 *            - Enable monitoring with the TMC.
 	 * @throws InterruptedException
 	 * @throws IOException
 	 */
@@ -132,8 +133,7 @@ public class EhcachePounder {
 			long entryCount, String offHeapSize, int maxOnHeapCount,
 			int batchCount, int maxValueSize, int minValueSize,
 			int hotSetPercentage, int rounds, int updatePercentage,
-			String diskStorePath) throws InterruptedException, IOException {
-		this.storeType = storeType;
+			String diskStorePath, boolean monitoringEnabled) throws InterruptedException, IOException {
 		this.entryCount = entryCount;
 		this.threadCount = threadCount;
 		this.offHeapSize = offHeapSize;
@@ -145,8 +145,7 @@ public class EhcachePounder {
 		this.rounds = rounds;
 		this.updatePercentage = updatePercentage;
 		this.diskStorePath = diskStorePath;
-		this.readSampleSize = 1;
-		initializeCache(storeType);
+		initializeCache(storeType, monitoringEnabled);
 		this.results = new Results(storeType);
 		this.csvOut = new PrintWriter(new FileWriter("results.csv"));
 	}
@@ -367,7 +366,7 @@ public class EhcachePounder {
 		return true;
 	}
 
-	private void initializeCache(StoreType storeType) {
+	private void initializeCache(StoreType storeType, boolean monitoringEnabled) {
 		Configuration cacheManagerConfig = new Configuration();
 
 		// Add default cache
@@ -392,6 +391,20 @@ public class EhcachePounder {
                            new PersistenceConfiguration()
                             .strategy(Strategy.LOCALENTERPRISE));
 		}
+
+		// Enable TMC if desired.
+		if(monitoringEnabled) {
+			// Enable REST services
+			ManagementRESTServiceConfiguration managementRESTConfig = new ManagementRESTServiceConfiguration();
+			managementRESTConfig.setEnabled(true);
+			managementRESTConfig.setBind("0.0.0.0:9888");
+			cacheManagerConfig.addManagementRESTService(managementRESTConfig);
+			
+			// Monitor this cache
+			cacheConfig.setStatistics(true);
+		}
+		
+		
 		cacheManagerConfig.addCache(cacheConfig);
 
 		this.cacheManager = new CacheManager(cacheManagerConfig);
@@ -424,9 +437,10 @@ public class EhcachePounder {
 		int rounds = (Integer) config.get("rounds");
 		int updatePercentage = (Integer) config.get("updatePercentage");
 		String diskStorePath = (String) config.get("diskStorePath");
+		Boolean monitoringEnabled = (Boolean) config.get("monitoringEnabled");
 		new EhcachePounder(storeType, threadCount, entryCount, offHeapSize,
 				maxOnHeapCount, batchCount, maxValueSize, minValueSize,
-				hotSetPercentage, rounds, updatePercentage, diskStorePath)
+				hotSetPercentage, rounds, updatePercentage, diskStorePath, monitoringEnabled)
 				.start();
 	}
 
