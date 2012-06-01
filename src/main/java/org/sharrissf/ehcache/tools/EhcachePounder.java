@@ -16,6 +16,7 @@ import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.config.CacheConfiguration;
 import net.sf.ehcache.config.Configuration;
+import net.sf.ehcache.config.Configuration.Monitoring;
 import net.sf.ehcache.config.DiskStoreConfiguration;
 import net.sf.ehcache.config.ManagementRESTServiceConfiguration;
 import net.sf.ehcache.config.MemoryUnit;
@@ -401,6 +402,7 @@ public class EhcachePounder {
 			cacheManagerConfig.addManagementRESTService(managementRESTConfig);
 			
 			// Monitor this cache
+			cacheManagerConfig.monitoring(Monitoring.ON);
 			cacheConfig.setStatistics(true);
 		}
 		
