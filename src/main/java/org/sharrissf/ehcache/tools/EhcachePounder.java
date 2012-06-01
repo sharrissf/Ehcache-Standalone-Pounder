@@ -444,6 +444,7 @@ public class EhcachePounder {
 				maxOnHeapCount, batchCount, maxValueSize, minValueSize,
 				hotSetPercentage, rounds, updatePercentage, diskStorePath, monitoringEnabled)
 				.start();
+		System.exit(0);
 	}
 
 	private static final class Results {
