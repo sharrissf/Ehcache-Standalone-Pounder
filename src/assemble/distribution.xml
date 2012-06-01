@@ -37,6 +37,7 @@
 			<scope>runtime</scope>
 			<excludes>
 				<exclude>net.sf.ehcache:ehcache-core-ee</exclude>
+				<exclude>net.sf.ehcache:ehcache-ee-rest-agent</exclude>
 			</excludes>
 		</dependencySet>
 		<dependencySet>
