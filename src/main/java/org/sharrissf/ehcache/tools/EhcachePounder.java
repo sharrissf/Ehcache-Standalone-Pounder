@@ -177,6 +177,7 @@ public class EhcachePounder {
 		}
 		results.setMaxGetTime(maxGetTime.get());
 		results.printResults(System.out);
+		cacheManager.shutdown();
 	}
 
 	private void outputRoundData(int round, int cacheSize,
@@ -444,7 +445,7 @@ public class EhcachePounder {
 				maxOnHeapCount, batchCount, maxValueSize, minValueSize,
 				hotSetPercentage, rounds, updatePercentage, diskStorePath, monitoringEnabled)
 				.start();
-		System.exit(0);
+//		System.exit(0);
 	}
 
 	private static final class Results {
