@@ -391,7 +391,7 @@ public class EhcachePounder {
 					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize)
 					.persistence(
                            new PersistenceConfiguration()
-                            .strategy(Strategy.LOCALENTERPRISE));
+                            .strategy(Strategy.LOCALRESTARTABLE));
 		}
 
 		// Enable TMC if desired.
