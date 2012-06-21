@@ -2,3 +2,4 @@ target
 lib
 .project
 .classpath
+.settings
