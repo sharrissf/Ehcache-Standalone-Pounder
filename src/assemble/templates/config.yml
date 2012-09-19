@@ -10,3 +10,6 @@ hotSetPercentage: 99
 rounds: 40
 updatePercentage: 10
 diskStorePath: java.io.tmpdir
+useTerracottaArray: false
+TerracottaArrayURL: localhost:9510
+Consistency: eventual

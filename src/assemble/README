@@ -9,13 +9,29 @@ Ehcache and the license key from terracotta.org:
 
     http://terracotta.org/dl/dowload-bigmemory
 
+
 2. RUN THE TUTORIAL
 
 See the tutorial material on terracotta.org:
 
     http://terracotta.org/start/bigmemory-tutorial
 
-3. TEST DIFFERENT CONFIGURATIONS
+
+3. BEFORE YOU START
+
+Before you can use the pounder, make sure that you place the ehcache core libraries
+in the pounder root folder. 
+
+<EhCachePounder>/
+  - ehcache-core-ee.jar
+  - ehcache-ee-rest-agent.jar
+  - ehcache-terracotta-ee-x.x.x.jar
+  - terracotta-toolkit-x.x-runtime-ee-y.y.y.jar
+  
+The libraries (and their versions) are referenced from within the startup scripts, please make sure to amend them if needed. 
+
+
+4. TEST DIFFERENT CONFIGURATIONS
 
 If you want to test configurations other than those pre-defined in the
 templates, you can alter the configuration as set in the config.yml file. All
@@ -73,6 +89,16 @@ diskStorePath
 
 monitoringEnabled
   Enable monitoring with the Terracotta Management Console
+  
+useTerracottaArray
+  Enable or disable the use of a L2 Terracotta Server Array. (true/false)
+  
+TerracottaArrayURL
+  URL pointing to the Terracotta Server Array. Will use "localhost:9510" as default.
+  
+Consistency
+  Set the transaction consistency level - valid entries are: eventual / strong
+  
 
 
 EXAMPLE CONFIGURATION
@@ -90,3 +116,6 @@ rounds: 40
 updatePercentage: 10
 diskStorePath: /export1/dev
 monitoringEnabled: false
+useTerracottaArray: false
+TerracottaArrayURL: localhost:9510
+Consistency: eventual

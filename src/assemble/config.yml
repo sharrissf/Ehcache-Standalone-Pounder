@@ -11,3 +11,6 @@ rounds: 40
 updatePercentage: 10
 diskStorePath: /export1/dev
 monitoringEnabled: false
+useTerracottaArray: false
+TerracottaArrayURL: localhost:9510
+Consistency: eventual
