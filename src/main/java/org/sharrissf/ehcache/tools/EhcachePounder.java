@@ -20,6 +20,8 @@ import net.sf.ehcache.config.Configuration.Monitoring;
 import net.sf.ehcache.config.DiskStoreConfiguration;
 import net.sf.ehcache.config.ManagementRESTServiceConfiguration;
 import net.sf.ehcache.config.MemoryUnit;
+import net.sf.ehcache.config.TimeoutBehaviorConfiguration;
+import net.sf.ehcache.config.NonstopConfiguration;
 import net.sf.ehcache.config.PersistenceConfiguration;
 import net.sf.ehcache.config.PersistenceConfiguration.Strategy;
 import net.sf.ehcache.config.TerracottaConfiguration;
@@ -87,6 +89,10 @@ public class EhcachePounder {
 	private final boolean useTerracottaArray; 
 	private String TerracottaArrayURL;
 	private String Consistency;
+	private int Concurrency;
+	private final boolean nonstopCache;
+	private int nonStopTimeoutMillis;
+	private String nonStopTimeoutBehavior;
 
 	private volatile boolean isWarmup = true;
 	private volatile AtomicLong maxBatchTimeMillis = new AtomicLong();
@@ -140,7 +146,11 @@ public class EhcachePounder {
 			int batchCount, int maxValueSize, int minValueSize,
 			int hotSetPercentage, int rounds, int updatePercentage,
 			String diskStorePath, boolean monitoringEnabled, 
-			boolean useTerracottaArray, String TerracottaArrayURL, String Consistency) throws InterruptedException, IOException {
+			boolean useTerracottaArray, String TerracottaArrayURL, 
+			String Consistency, int Concurrency, boolean nonStopCache,
+			int nonStopTimeoutMillis, String nonStopTimeoutBehavior
+			) throws InterruptedException, IOException {
+		
 		this.entryCount = entryCount;
 		this.threadCount = threadCount;
 		this.offHeapSize = offHeapSize;
@@ -155,7 +165,13 @@ public class EhcachePounder {
 		this.useTerracottaArray = useTerracottaArray;
 		this.TerracottaArrayURL = TerracottaArrayURL;
 		this.Consistency = Consistency;
+		this.Concurrency = Concurrency;
+		this.nonstopCache = nonStopCache;
+		this.nonStopTimeoutMillis = nonStopTimeoutMillis;
+		this.nonStopTimeoutBehavior = nonStopTimeoutBehavior;
+		
 		initializeCache(storeType, monitoringEnabled);
+		
 		this.results = new Results(storeType);
 		this.csvOut = new PrintWriter(new FileWriter("results.csv"));
 	}
@@ -379,20 +395,38 @@ public class EhcachePounder {
 
 	private void initializeCache(StoreType storeType, boolean monitoringEnabled) {
 		Configuration cacheManagerConfig = new Configuration();
-
 		TerracottaConfiguration tcConfig = new TerracottaConfiguration();
-		tcConfig.setConsistency(Consistency);
-		
+				
 		if (useTerracottaArray) {
+			
+			// Set the terracotta consistency and concurrency 
+			// Be aware, the consistency flag is not using fluent configuration. Need to fix this!
+			tcConfig.setConsistency(Consistency);
+			tcConfig.concurrency(Concurrency);
+	
+			// Add clause for non stop caching
+			if (nonstopCache) {
+				tcConfig
+					.nonstop(new NonstopConfiguration()
+					.enabled(true)
+					.timeoutMillis(nonStopTimeoutMillis)
+					.timeoutBehavior(new TimeoutBehaviorConfiguration()
+						.type(
+								// At the moment only LOCAL_READS are supported - Unknown errors ... Room for later improvement :)
+								TimeoutBehaviorConfiguration.TimeoutBehaviorType.LOCAL_READS.getTypeName()
+								)));
+			}
+			
 			// Setup the Terracotta cluster config
 			TerracottaClientConfiguration terracottaConfig 
 				= new TerracottaClientConfiguration();
 
+			// Check if the Terracotta URL to localhost
 			if (TerracottaArrayURL == null) {
 				TerracottaArrayURL = "localhost:9510";
 			}
-			terracottaConfig.setUrl(TerracottaArrayURL);
 
+			terracottaConfig.setUrl(TerracottaArrayURL);
 			cacheManagerConfig.addTerracottaConfig(terracottaConfig);
 
 		}
@@ -403,10 +437,16 @@ public class EhcachePounder {
 		// Create Cache
 		CacheConfiguration cacheConfig = null;
 		if (storeType.equals(StoreType.OFFHEAP)) {
-			cacheConfig = new CacheConfiguration().name("testCache").eternal(true)
+			cacheConfig = new CacheConfiguration()
+					.name("testCache")
+					.eternal(true)
 					.maxElementsInMemory(maxOnHeapCount)
-					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize);
+					.overflowToOffHeap(true)
+					.maxMemoryOffHeap(offHeapSize)
+					.maxEntriesLocalHeap(maxOnHeapCount)
+					.maxElementsOnDisk(maxOnHeapCount);
 			
+			// Append Terracotta flag if enabled...
 			if (useTerracottaArray) {
 				cacheConfig.terracotta(tcConfig);
 			} 
@@ -416,8 +456,11 @@ public class EhcachePounder {
 			cacheConfig = new CacheConfiguration()
 				.name("testCache")
 				.eternal(true)
-				.maxElementsInMemory(maxOnHeapCount);
+				.maxElementsInMemory(maxOnHeapCount)
+				.maxEntriesLocalHeap(maxOnHeapCount)
+				.maxElementsOnDisk(maxOnHeapCount);
 				
+			// Append Terracotta flag if enabled...
 			if (useTerracottaArray) {
 				cacheConfig.terracotta(tcConfig);
 			} 
@@ -426,12 +469,17 @@ public class EhcachePounder {
 			cacheManagerConfig.addDiskStore(new DiskStoreConfiguration()
 					.path(diskStorePath));
 			cacheConfig = new CacheConfiguration().name("testCache")
-					.eternal(true).maxBytesLocalHeap(100, MemoryUnit.MEGABYTES)
-					.overflowToOffHeap(true).maxMemoryOffHeap(offHeapSize)
+					.eternal(true)
+					.maxBytesLocalHeap(100, MemoryUnit.MEGABYTES)
+					.overflowToOffHeap(true)
+					.maxMemoryOffHeap(offHeapSize)
+					.maxEntriesLocalHeap(maxOnHeapCount)
+					.maxElementsOnDisk(maxOnHeapCount)
 					.persistence(
                            new PersistenceConfiguration()
                             .strategy(Strategy.LOCALRESTARTABLE));
 			
+			// Append Terracotta flag if enabled...
 			if (useTerracottaArray) {
 				cacheConfig.terracotta(tcConfig);
 			} 
@@ -473,6 +521,7 @@ public class EhcachePounder {
 
 		StoreType storeType = StoreType.valueOf((String) config
 				.get("storeType"));
+		
 		Integer entryCount = (Integer) config.get("entryCount");
 		int threadCount = (Integer) config.get("threadCount");
 		String offHeapSize = (String) config.get("offHeapSize");
@@ -484,13 +533,22 @@ public class EhcachePounder {
 		int rounds = (Integer) config.get("rounds");
 		int updatePercentage = (Integer) config.get("updatePercentage");
 		String diskStorePath = (String) config.get("diskStorePath");
+		
+		// New configuration parameters for Terracotta Server Array
 		Boolean useTerracottaArray = (Boolean) config.get("useTerracottaArray");
 		String TerracottaArrayURL = (String) config.get("TerracottaArrayURL");
 		String Consistency = (String) config.get("Consistency");
+		int Concurrency = (Integer) config.get("Concurrency");
 		Boolean monitoringEnabled = (Boolean) config.get("monitoringEnabled");
+		Boolean nonstopCache = (Boolean) config.get("nonStopCache");
+		int nonStopTimeoutMillis = (Integer) config.get("nonStopTimeoutMillis");
+		String nonStopTimeoutBehavior = (String) config.get("nonStopTimeoutBehavior");
+		
 		new EhcachePounder(storeType, threadCount, entryCount, offHeapSize,
 				maxOnHeapCount, batchCount, maxValueSize, minValueSize,
-				hotSetPercentage, rounds, updatePercentage, diskStorePath, monitoringEnabled, useTerracottaArray, TerracottaArrayURL, Consistency)
+				hotSetPercentage, rounds, updatePercentage, diskStorePath, monitoringEnabled, 
+				useTerracottaArray, TerracottaArrayURL, Consistency, Concurrency,
+				nonstopCache, nonStopTimeoutMillis, nonStopTimeoutBehavior )
 				.start();
 	}
 

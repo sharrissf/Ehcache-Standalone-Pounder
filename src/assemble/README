@@ -99,6 +99,20 @@ TerracottaArrayURL
 Consistency
   Set the transaction consistency level - valid entries are: eventual / strong
   
+Concurrency
+  Set the Terracotta Server Array concurrency value: 0 = Disabled (TSA will automatically choose!)
+  or any positive integer value
+
+nonStopCache
+  Enable the local cache to be a non-stop cache. This would allow the client to continue reading from 
+  the cache even if the TSA server goes down. (boolean - true/false)
+  
+nonStopTimeoutMillis
+  The timeout value for the non stop cache. (default 30000)
+
+nonStopTimeoutBehavior: localreads
+  What is the default behaviour for accessing an object while the TSA is unavailable. (localreads, noop, exception)
+
 
 
 EXAMPLE CONFIGURATION
