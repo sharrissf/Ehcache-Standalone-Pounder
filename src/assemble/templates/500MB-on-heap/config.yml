@@ -18,3 +18,6 @@ Concurrency: 0
 nonStopCache: false
 nonStopTimeoutMillis: 30000
 nonStopTimeoutBehavior: localreads
+ehcacheFileEnabled: false
+ehcacheFileURL: ehcache.xml
+ehcacheFileCacheName: myTestCache

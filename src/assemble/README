@@ -1,6 +1,10 @@
 This is a small app that exercises the characteristics of the Enterprise
 Ehcache tiered store, including BigMemory and the disk store.
 
+Software and/or updates can be found here: 
+https://github.com/sgrotz/Ehcache-Standalone-Pounder
+
+
 1. DOWNLOAD ENTERPRISE EHCACHE
 
 You must use a version of Enterprise Ehcache that supports BigMemory
@@ -110,9 +114,20 @@ nonStopCache
 nonStopTimeoutMillis
   The timeout value for the non stop cache. (default 30000)
 
-nonStopTimeoutBehavior: localreads
+nonStopTimeoutBehavior
   What is the default behaviour for accessing an object while the TSA is unavailable. (localreads, noop, exception)
 
+ehcacheFileEnabled
+  Instead of using the Pounder build in functionality to create its own designated cache, you can also specify a cache through an external xml file. 
+  PLEASE NOTE: The external cache has to be a basic cache without any search attributes and/or object specifications. The pounder will write unstructured 
+  sample data to the cache. If there are constraints, the pounder will fail. 
+
+ehcacheFileURL
+  Specify where to find the ehcache.xml file. By default it should be in the root directory, use: ..\..\ehcache.xml
+  
+ehcacheFileCacheName
+  The ehcache file can contain several caches. Please specify here, which cache to use. For example: myTestCache
+  
 
 
 EXAMPLE CONFIGURATION
@@ -133,3 +148,9 @@ monitoringEnabled: false
 useTerracottaArray: false
 TerracottaArrayURL: localhost:9510
 Consistency: eventual
+nonStopCache: false
+nonStopTimeoutMillis: 30000
+nonStopTimeoutBehavior: localreads
+ehcacheFileEnabled: false
+ehcacheFileURL: ..\..\ehcache.xml
+ehcacheFileCacheName: myTestCache

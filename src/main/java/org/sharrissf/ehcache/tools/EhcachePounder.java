@@ -93,6 +93,9 @@ public class EhcachePounder {
 	private final boolean nonstopCache;
 	private int nonStopTimeoutMillis;
 	private String nonStopTimeoutBehavior;
+	private boolean ehcacheFileEnabled;
+	private String ehcacheFileURL;
+	private String ehcacheFileCacheName;
 
 	private volatile boolean isWarmup = true;
 	private volatile AtomicLong maxBatchTimeMillis = new AtomicLong();
@@ -148,7 +151,8 @@ public class EhcachePounder {
 			String diskStorePath, boolean monitoringEnabled, 
 			boolean useTerracottaArray, String TerracottaArrayURL, 
 			String Consistency, int Concurrency, boolean nonStopCache,
-			int nonStopTimeoutMillis, String nonStopTimeoutBehavior
+			int nonStopTimeoutMillis, String nonStopTimeoutBehavior,
+			boolean ehcacheFileEnabled, String ehcacheFileURL, String ehcacheFileCacheName
 			) throws InterruptedException, IOException {
 		
 		this.entryCount = entryCount;
@@ -169,8 +173,17 @@ public class EhcachePounder {
 		this.nonstopCache = nonStopCache;
 		this.nonStopTimeoutMillis = nonStopTimeoutMillis;
 		this.nonStopTimeoutBehavior = nonStopTimeoutBehavior;
-		
-		initializeCache(storeType, monitoringEnabled);
+		this.ehcacheFileEnabled = ehcacheFileEnabled;
+		this.ehcacheFileURL = ehcacheFileURL;
+		this.ehcacheFileCacheName = ehcacheFileCacheName;
+				
+		// If a ehcache file was provided, create the cache using the parameters from the file. 
+		// If not, create your own cache ...
+		if (ehcacheFileEnabled) {
+			initializeCacheByFile(ehcacheFileURL, ehcacheFileCacheName);
+		} else {
+			initializeCache(storeType, monitoringEnabled);
+		}
 		
 		this.results = new Results(storeType);
 		this.csvOut = new PrintWriter(new FileWriter("results.csv"));
@@ -509,6 +522,19 @@ public class EhcachePounder {
 				.println(cacheManager.getActiveConfigurationText("testCache"));
 	}
 
+	
+	private void initializeCacheByFile(String ehcacheFileURL, String ehcacheFileCacheName) {
+
+		// Create a new cachemanager from the ehcache.xml file provided. 
+		this.cacheManager = new CacheManager(ehcacheFileURL);
+		System.out.println("Printing Ehchache configuration:");
+		
+		this.cache = this.cacheManager.getCache(ehcacheFileCacheName);
+		System.out.println(cacheManager.getActiveConfigurationText(ehcacheFileCacheName));
+	}
+	
+	
+
 	@SuppressWarnings("unchecked")
 	public static final void main(String[] args) throws Exception {
 		Map<String, Object> config = (Map<String, Object>) Yaml
@@ -543,12 +569,16 @@ public class EhcachePounder {
 		Boolean nonstopCache = (Boolean) config.get("nonStopCache");
 		int nonStopTimeoutMillis = (Integer) config.get("nonStopTimeoutMillis");
 		String nonStopTimeoutBehavior = (String) config.get("nonStopTimeoutBehavior");
+		Boolean ehcacheFileEnabled = (Boolean) config.get("ehcacheFileEnabled");
+		String ehcacheFileURL = (String) config.get("ehcacheFileURL");
+		String ehcacheFileCacheName = (String) config.get("ehcacheFileCacheName");
 		
 		new EhcachePounder(storeType, threadCount, entryCount, offHeapSize,
 				maxOnHeapCount, batchCount, maxValueSize, minValueSize,
 				hotSetPercentage, rounds, updatePercentage, diskStorePath, monitoringEnabled, 
 				useTerracottaArray, TerracottaArrayURL, Consistency, Concurrency,
-				nonstopCache, nonStopTimeoutMillis, nonStopTimeoutBehavior )
+				nonstopCache, nonStopTimeoutMillis, nonStopTimeoutBehavior,
+				ehcacheFileEnabled, ehcacheFileURL, ehcacheFileCacheName)
 				.start();
 	}
 

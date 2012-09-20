@@ -14,7 +14,11 @@ monitoringEnabled: false
 useTerracottaArray: false
 TerracottaArrayURL: localhost:9510
 Consistency: eventual
+monitoringEnabled: false
 Concurrency: 0
 nonStopCache: false
 nonStopTimeoutMillis: 30000
 nonStopTimeoutBehavior: localreads
+ehcacheFileEnabled: false
+ehcacheFileURL: ehcache.xml
+ehcacheFileCacheName: myTestCache

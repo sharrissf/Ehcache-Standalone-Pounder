@@ -1,0 +1,37 @@
+
+<!-- 
+  This file is used as a sample on how to provide an external ehcache.xml file to the pounder
+  PLEASE NOTE: The cache has to be a basic cache without any search attributes 
+  and/or object specifications. The pounder will write unstructured sample data to 
+  the cache. If there are constraints, the pounder will fail. 
+  If you specify more than one cache, please also set the cache name in the config.yml
+-->
+
+<ehcache     
+    name="ehCachePounder"     
+    updateCheck="false">    
+    <diskStore         
+        path="./cacheStore/ehCachePounder">   
+    </diskStore>    
+    <defaultCache         
+        eternal="false"         
+        maxElementsInMemory="5000"         
+        overflowToDisk="false">    
+    </defaultCache>        
+    <cache         
+        name="myTestCache"         
+        eternal="true"         
+        maxElementsInMemory="25000"         
+        overflowToDisk="false"         
+        cacheLoaderTimeoutMillis="30000"
+        statistics="true">        
+        <terracotta>            
+            <nonstop>            
+            </nonstop>        
+        </terracotta>
+    </cache>  
+    <terracottaConfig         
+        url="localhost:9510"         
+        >    
+    </terracottaConfig>
+</ehcache>
