@@ -20,9 +20,11 @@
     </defaultCache>        
     <cache         
         name="myTestCache"         
-        eternal="true"         
-        maxElementsInMemory="25000"         
-        overflowToDisk="false"         
+        eternal="true"               
+        overflowToDisk="false" 
+        overflowToOffHeap="false"
+        maxBytesLocalOffHeap="1G"
+        maxBytesLocalHeap="500M"        
         cacheLoaderTimeoutMillis="30000"
         statistics="true">        
         <terracotta>            
