@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.sharrissf</groupId>
 	<artifactId>ehcache-pounder</artifactId>
-	<version>0.0.10-SNAPSHOT</version>
+	<version>0.0.11-SNAPSHOT</version>
 	<name>Ehcache Pounder</name>
 	<description>Simple tool for pounding and measuring the performance of
 		ehcache and it's tiered stores</description>
@@ -57,11 +57,11 @@
 			<artifactId>ehcache-core-ee</artifactId>
 			<version>2.6.0-SNAPSHOT</version>
 		</dependency>
-        <dependency>
-            <groupId>net.sf.ehcache</groupId>
-            <artifactId>ehcache-ee-rest-agent</artifactId>
-            <version>2.6.0-SNAPSHOT</version>
-        </dependency>		
+		<dependency>
+		    <groupId>net.sf.ehcache</groupId>
+		    <artifactId>ehcache-ee-rest-agent</artifactId>
+		    <version>2.6.0-SNAPSHOT</version>
+		</dependency>		
 	</dependencies>
 	<repositories>
 		<repository>

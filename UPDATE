@@ -1,0 +1,25 @@
+
+Ehcache Pounder Update Log
+Version: 0.0.11
+
+LOG:
+- 19/09/2012: Enabled Pounder to allow the testing of the Terracotta server array. 
+
+Enabled 3 new configuration settings: 
+useTerracottaArray
+  Enable or disable the use of a L2 Terracotta Server Array. (true/false)
+TerracottaArrayURL
+  URL pointing to the Terracotta Server Array. Will use "localhost:9510" as default.
+Consistency
+  Set the transaction consistency level - valid entries are: eventual / strong
+  
+- 20/09/2012: Enabled Pounder to use non-stop cache features as well as concurrency:
+nonStopCache
+  Enable the local cache to be a non-stop cache. This would allow the client to continue reading from 
+  the cache even if the TSA server goes down. (boolean - true/false)
+  
+nonStopTimeoutMillis
+  The timeout value for the non stop cache. (default 30000)
+
+nonStopTimeoutBehavior: localreads
+  What is the default behaviour for accessing an object while the TSA is unavailable. (localreads, noop, exception)
