@@ -1,3 +1,13 @@
+
+
+###################
+THIS APPLICATION IS NO LONGER SUPPORTED - IT WAS DEPRECIATED WITH v2 OF THE EHCACHE POUNDER. 
+PLEASE USE THE NEWER VERSION INSTEAD - https://github.com/sgrotz/Ehcache-Pounder-v2
+###################
+
+
+
+
 This is a small app that exercises the characteristics of the Enterprise
 Ehcache tiered store, including BigMemory and the disk store.
 
